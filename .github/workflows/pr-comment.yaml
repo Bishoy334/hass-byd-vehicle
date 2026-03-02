@@ -1,0 +1,36 @@
+name: Comment on pull requests
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  pr-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post PR guidelines comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: [
+                'Thank you for this pull request! 🎉 Contributions like this help keep the project moving forward.',
+                '',
+                'Before this can be reviewed and merged, please make sure the following are covered:',
+                '',
+                '**📋 Required for all PRs:**',
+                '- [ ] **End-to-end logs** — Include full debug logs (redacted of sensitive data) that verify the behavior of your change in a real Home Assistant environment. This is essential for review.',
+                '- [ ] **Test steps** — Describe the exact steps you took to test this, and the observed results.',
+                '- [ ] **Local checks pass** — Run `ruff check .`, `black --check .`, and `mypy` locally before requesting review.',
+                '',
+                '**🤖 A note on AI-generated code:**',
+                'If any part of this PR was generated with AI assistance, please be upfront about it. AI-generated code requires **extra scrutiny** from the contributor — make sure you fully understand every line, have tested it thoroughly, and can explain the reasoning behind each change. PRs that appear to be unreviewed AI output will require significant revisions.',
+                '',
+                'Thanks again for contributing — looking forward to reviewing this! 🙏',
+              ].join('\n'),
+            });
