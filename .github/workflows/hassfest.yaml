@@ -6,6 +6,8 @@ on:
 
 jobs:
   hassfest:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
