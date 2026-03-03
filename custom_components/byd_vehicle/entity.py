@@ -3,42 +3,34 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
-from time import monotonic
-from typing import Any, TypeVar
+from typing import Any
 
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
-from pybyd import BydRemoteControlError
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from pybyd import BydRemoteControlError, VehicleSnapshot
 from pybyd.models.gps import GpsInfo
 from pybyd.models.hvac import HvacStatus
+from pybyd.models.realtime import VehicleRealtimeData
+from pybyd.models.vehicle import Vehicle
 
 from .const import DOMAIN
-from .coordinator import BydApi, get_vehicle_display
+from .coordinator import BydDataUpdateCoordinator, get_vehicle_display
 
 _LOGGER = logging.getLogger(__name__)
 
-#: Maximum seconds to hold optimistic state before falling back to API data.
-_OPTIMISTIC_TTL_SECONDS: float = 300.0
 
-
-CoordinatorT = TypeVar("CoordinatorT", bound=DataUpdateCoordinator[dict[str, Any]])
-
-
-class BydVehicleEntity(CoordinatorEntity[CoordinatorT]):
+class BydVehicleEntity(CoordinatorEntity[BydDataUpdateCoordinator]):
     """Mixin providing common properties for BYD vehicle entities.
 
-    Subclasses must set ``_vin`` and ``_vehicle`` before calling ``super().__init__``.
+    Subclasses must set ``_vin`` and ``_vehicle`` before calling
+    ``super().__init__``.  Data is read from ``coordinator.data`` which
+    is a :class:`VehicleSnapshot` — no local shadow state, no optimistic
+    tracking.
     """
 
     _vin: str
-    _vehicle: Any
-    _command_pending: bool = False
-    _commanded_at: float | None = None
+    _vehicle: Vehicle
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -46,18 +38,18 @@ class BydVehicleEntity(CoordinatorEntity[CoordinatorT]):
         return DeviceInfo(
             identifiers={(DOMAIN, self._vin)},
             name=get_vehicle_display(self._vehicle),
-            manufacturer=getattr(self._vehicle, "brand_name", None) or "BYD",
-            model=getattr(self._vehicle, "model_name", None),
+            manufacturer=self._vehicle.brand_name or "BYD",
+            model=self._vehicle.model_name,
             serial_number=self._vin,
-            hw_version=getattr(self._vehicle, "tbox_version", None) or None,
+            hw_version=self._vehicle.tbox_version or None,
         )
 
     @property
     def available(self) -> bool:
-        """Available when coordinator has data for this vehicle."""
+        """Available when coordinator has a snapshot with vehicle data."""
         if not super().available:
             return False
-        return self._vin in self.coordinator.data.get("vehicles", {})
+        return self.coordinator.data is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -65,96 +57,73 @@ class BydVehicleEntity(CoordinatorEntity[CoordinatorT]):
         return {"vin": self._vin}
 
     # ------------------------------------------------------------------
-    # Shared data helpers
+    # Snapshot data helpers
     # ------------------------------------------------------------------
 
-    def _get_hvac_status(self) -> HvacStatus | None:
-        """Return the HVAC status for this VIN, or None."""
-        hvac = self.coordinator.data.get("hvac", {}).get(self._vin)
-        return hvac if isinstance(hvac, HvacStatus) else None
+    def _snapshot(self) -> VehicleSnapshot | None:
+        """Return the coordinator's current snapshot."""
+        return self.coordinator.data
 
-    def _get_realtime(self) -> Any | None:
-        """Return the realtime data for this VIN, or None."""
-        return self.coordinator.data.get("realtime", {}).get(self._vin)
+    def _get_realtime(self) -> VehicleRealtimeData | None:
+        """Return realtime data from the snapshot."""
+        snap = self._snapshot()
+        return snap.realtime if snap is not None else None
+
+    def _get_hvac_status(self) -> HvacStatus | None:
+        """Return HVAC status from the snapshot."""
+        snap = self._snapshot()
+        return snap.hvac if snap is not None else None
 
     def _get_gps(self) -> GpsInfo | None:
-        """Return the GPS data for this VIN, or None."""
-        gps = self.coordinator.data.get("gps", {}).get(self._vin)
-        return gps if isinstance(gps, GpsInfo) else None
+        """Return GPS data from the snapshot."""
+        snap = self._snapshot()
+        return snap.gps if snap is not None else None
 
-    def _get_source_obj(self, source: str) -> Any | None:
-        """Return the model object for the given data source and this VIN."""
-        return self.coordinator.data.get(source, {}).get(self._vin)
+    def _get_source_obj(self, source: str = "realtime") -> Any | None:
+        """Return the snapshot section for the given *source* string.
+
+        Supported values: ``"realtime"``, ``"hvac"``, ``"gps"``.
+        """
+        if source == "realtime":
+            return self._get_realtime()
+        if source == "hvac":
+            return self._get_hvac_status()
+        if source == "gps":
+            return self._get_gps()
+        return None
 
     def _is_vehicle_on(self) -> bool:
-        """Return True when the realtime feed reports the vehicle is on."""
+        """Return True when the vehicle is on."""
         realtime = self._get_realtime()
         if realtime is None:
             return False
-        return bool(getattr(realtime, "is_vehicle_on", False))
+        return bool(realtime.is_vehicle_on)
 
     # ------------------------------------------------------------------
-    # Optimistic command dispatch
+    # Command helpers
     # ------------------------------------------------------------------
 
-    async def _execute_command(
+    async def _execute_car_command(
         self,
-        api: BydApi,
-        call: Callable[[Any], Any],
+        coro: Any,
         *,
         command: str,
-        on_rollback: Callable[[], None] | None = None,
     ) -> None:
-        """Execute a remote command with shared error handling.
+        """Execute a BydCar capability command with HA error handling.
 
         On :class:`BydRemoteControlError` the command is treated as
-        optimistically successful (warning logged).  On any other failure
-        *on_rollback* is called (if provided) and the exception is
-        re-raised as :class:`HomeAssistantError`.
-
-        After a successful dispatch ``_command_pending`` is set to
-        ``True`` and ``async_write_ha_state`` is called.  Callers should
-        set their optimistic state **before** calling this method.
+        optimistically successful (pyBYD's state engine handles the
+        projection).  On any other failure the exception is re-raised
+        as :class:`HomeAssistantError`.
         """
         try:
-            await api.async_call(call, vin=self._vin, command=command)
+            await coro
         except BydRemoteControlError as exc:
             _LOGGER.warning(
                 "%s command sent but cloud reported failure — "
-                "updating state optimistically: %s",
+                "pyBYD state engine handles projection: %s",
                 command,
                 exc,
             )
         except Exception as exc:  # noqa: BLE001
-            if on_rollback is not None:
-                on_rollback()
             raise HomeAssistantError(str(exc)) from exc
-        self._command_pending = True
-        self._commanded_at = monotonic()
-        self.async_write_ha_state()
-
-    def _is_command_confirmed(self) -> bool:
-        """Return True when coordinator data confirms the commanded state.
-
-        **Any entity that calls** ``_execute_command()`` **must override this
-        method.**  The default ``True`` causes the optimistic flag to be
-        cleared on the very next coordinator update — before the car has
-        actually acted — making the UI revert to stale API data instantly.
-
-        Override to compare the relevant coordinator fields against the
-        expected state and return ``False`` while data has not yet caught
-        up, so the optimistic display is held until confirmation arrives.
-        """
-        return True
-
-    def _handle_coordinator_update(self) -> None:
-        """Clear optimistic flag when data confirms the command or TTL expires."""
-        if self._command_pending:
-            ttl_expired = (
-                self._commanded_at is not None
-                and (monotonic() - self._commanded_at) >= _OPTIMISTIC_TTL_SECONDS
-            )
-            if self._is_command_confirmed() or ttl_expired:
-                self._command_pending = False
-                self._commanded_at = None
-        super()._handle_coordinator_update()

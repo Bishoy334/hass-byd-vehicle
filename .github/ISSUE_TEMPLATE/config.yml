@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: API mapping collaboration
+    url: https://github.com/jkaberg/pyBYD/issues/20
+    about: Use this issue for API mapping collaboration, including mapping-related bugs and feature requests.
   - name: Questions and support
     url: https://github.com/jkaberg/hass-byd-vehicle/discussions
     about: Please use Discussions for how-to questions and general support.

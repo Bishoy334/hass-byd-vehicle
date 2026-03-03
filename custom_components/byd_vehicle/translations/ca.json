@@ -95,9 +95,6 @@
       "total_mileage_v2": {
         "name": "Hodòmetre V2"
       },
-      "power_gear": {
-        "name": "Posició de marxa"
-      },
       "charging_state": {
         "name": "Estat de càrrega"
       },
@@ -121,24 +118,6 @@
       },
       "booking_charging_minute": {
         "name": "Minut de càrrega programada"
-      },
-      "left_front_tire_status": {
-        "name": "Estat del pneumàtic anterior esquerre"
-      },
-      "right_front_tire_status": {
-        "name": "Estat del pneumàtic anterior dret"
-      },
-      "left_rear_tire_status": {
-        "name": "Estat del pneumàtic posterior esquerre"
-      },
-      "right_rear_tire_status": {
-        "name": "Estat del pneumàtic posterior dret"
-      },
-      "tirepressure_system": {
-        "name": "Estat de pressió dels pneumàtics"
-      },
-      "rapid_tire_leak": {
-        "name": "Fuita ràpida de pneumàtics"
       },
       "total_power": {
         "name": "Potència total"
@@ -164,35 +143,8 @@
       "epb": {
         "name": "Fre d'estacionament electrònic"
       },
-      "eps": {
-        "name": "Direcció assistida elèctrica"
-      },
-      "esp": {
-        "name": "Estabilitat electrònica"
-      },
-      "abs_warning": {
-        "name": "Avís ABS"
-      },
-      "svs": {
-        "name": "Servei del vehicle requerit aviat"
-      },
-      "srs": {
-        "name": "Avís d'airbag"
-      },
-      "ect": {
-        "name": "Avís de temperatura del refrigerant"
-      },
       "ect_value": {
         "name": "Temperatura del refrigerant"
-      },
-      "pwr": {
-        "name": "Avís d'energia"
-      },
-      "power_system": {
-        "name": "Sistema d'energia"
-      },
-      "upgrade_status": {
-        "name": "Estat d'actualització OTA"
       },
       "refrigerator_state": {
         "name": "Refrigerador"
@@ -211,6 +163,48 @@
       },
       "remaining_minutes": {
         "name": "Minuts de càrrega restants"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "nearest_energy_consumption_unit": {
+        "name": "Nearest energy consumption unit"
+      },
+      "endurance_mileage_v2_unit": {
+        "name": "Endurance mileage V2 unit"
+      },
+      "total_mileage_v2_unit": {
+        "name": "Total mileage V2 unit"
+      },
+      "rate": {
+        "name": "Rate"
+      },
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "total_consumption": {
+        "name": "Total consumption"
+      },
+      "total_consumption_en": {
+        "name": "Total consumption EN"
+      },
+      "ok_light": {
+        "name": "OK light"
+      },
+      "power_battery_connection": {
+        "name": "Power battery connection"
+      },
+      "ins": {
+        "name": "INS"
+      },
+      "repair_mode_switch": {
+        "name": "Repair mode switch"
+      },
+      "vehicle_time_zone": {
+        "name": "Vehicle time zone"
       }
     },
     "binary_sensor": {
@@ -268,21 +262,6 @@
       "skylight": {
         "name": "Sostre solar"
       },
-      "left_front_door_lock": {
-        "name": "Pany de la porta anterior esquerra"
-      },
-      "right_front_door_lock": {
-        "name": "Pany de la porta anterior dreta"
-      },
-      "left_rear_door_lock": {
-        "name": "Pany de la porta posterior esquerra"
-      },
-      "right_rear_door_lock": {
-        "name": "Pany de la porta posterior dreta"
-      },
-      "sliding_door_lock": {
-        "name": "Pany de la porta corredissa"
-      },
       "battery_heat_state": {
         "name": "Escalfament de la bateria"
       },
@@ -291,6 +270,69 @@
       },
       "vehicle_state": {
         "name": "Vehicle engegat"
+      },
+      "abs_warning": {
+        "name": "Avís ABS"
+      },
+      "svs": {
+        "name": "Servei del vehicle requerit aviat"
+      },
+      "srs": {
+        "name": "Avís d'airbag"
+      },
+      "eps": {
+        "name": "Direcció assistida elèctrica"
+      },
+      "esp": {
+        "name": "Estabilitat electrònica"
+      },
+      "pwr": {
+        "name": "Avís d'energia"
+      },
+      "power_system": {
+        "name": "Sistema d'energia"
+      },
+      "ect": {
+        "name": "Avís de temperatura del refrigerant"
+      },
+      "tirepressure_system": {
+        "name": "Estat de pressió dels pneumàtics"
+      },
+      "rapid_tire_leak": {
+        "name": "Fuita ràpida de pneumàtics"
+      },
+      "left_front_tire_status": {
+        "name": "Estat del pneumàtic anterior esquerre"
+      },
+      "right_front_tire_status": {
+        "name": "Estat del pneumàtic anterior dret"
+      },
+      "left_rear_tire_status": {
+        "name": "Estat del pneumàtic posterior esquerre"
+      },
+      "right_rear_tire_status": {
+        "name": "Estat del pneumàtic posterior dret"
+      },
+      "upgrade_status": {
+        "name": "Estat d'actualització OTA"
+      },
+      "is_charger_connected": {
+        "name": "Charger connected"
+      },
+      "oil_pressure_system": {
+        "name": "Oil pressure system"
+      },
+      "braking_system": {
+        "name": "Braking system"
+      },
+      "charging_system": {
+        "name": "Charging system"
+      },
+      "steering_system": {
+        "name": "Steering system"
+      },
+      "less_one_min": {
+        "name": "Less one min"
       }
     },
     "button": {
@@ -408,6 +450,58 @@
     "device_tracker": {
       "location": {
         "name": "Ubicació"
+      }
+    }
+  },
+  "services": {
+    "fetch_realtime": {
+      "name": "Fetch realtime data",
+      "description": "Force-fetch the latest realtime vehicle telemetry from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_gps": {
+      "name": "Fetch GPS data",
+      "description": "Force-fetch the latest GPS location from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_hvac": {
+      "name": "Fetch HVAC status",
+      "description": "Force-fetch the latest HVAC / climate status from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_charging": {
+      "name": "Fetch charging status",
+      "description": "Force-fetch the latest charging status from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_energy": {
+      "name": "Fetch energy consumption",
+      "description": "Force-fetch the latest energy consumption data from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
       }
     }
   }

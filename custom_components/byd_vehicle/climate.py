@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
@@ -12,15 +11,14 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from pybyd import minutes_to_time_span
-from pybyd.models.control import ClimateStartParams
+from pybyd.models.vehicle import Vehicle
 
 from .const import (
     CONF_CLIMATE_DURATION,
     DEFAULT_CLIMATE_DURATION,
     DOMAIN,
 )
-from .coordinator import BydApi, BydDataUpdateCoordinator
+from .coordinator import BydDataUpdateCoordinator
 from .entity import BydVehicleEntity
 
 
@@ -32,7 +30,6 @@ async def async_setup_entry(
     """Set up BYD climate entities from a config entry."""
     data = hass.data[DOMAIN][entry.entry_id]
     coordinators: dict[str, BydDataUpdateCoordinator] = data["coordinators"]
-    api: BydApi = data["api"]
     climate_duration = entry.options.get(
         CONF_CLIMATE_DURATION,
         DEFAULT_CLIMATE_DURATION,
@@ -41,16 +38,20 @@ async def async_setup_entry(
     entities: list[ClimateEntity] = []
 
     for vin, coordinator in coordinators.items():
-        vehicle = coordinator.data.get("vehicles", {}).get(vin)
-        if vehicle is None:
-            continue
-        entities.append(BydClimate(coordinator, api, vin, vehicle, climate_duration))
+        entities.append(
+            BydClimate(coordinator, vin, coordinator.vehicle, climate_duration)
+        )
 
     async_add_entities(entities)
 
 
 class BydClimate(BydVehicleEntity, ClimateEntity):
-    """Representation of BYD climate control."""
+    """Representation of BYD climate control.
+
+    Reads state from ``VehicleSnapshot.hvac``.  Commands go through
+    ``car.hvac.start()`` / ``car.hvac.stop()`` which handle
+    projections, guard windows, and reconcile internally.
+    """
 
     _TEMP_MIN_C = 15
     _TEMP_MAX_C = 31
@@ -76,20 +77,15 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
     def __init__(
         self,
         coordinator: BydDataUpdateCoordinator,
-        api: BydApi,
         vin: str,
-        vehicle: Any,
+        vehicle: Vehicle,
         climate_duration: int = DEFAULT_CLIMATE_DURATION,
     ) -> None:
         super().__init__(coordinator)
-        self._api = api
         self._vin = vin
         self._vehicle = vehicle
-        self._climate_duration_code = minutes_to_time_span(climate_duration)
+        self._climate_duration = climate_duration
         self._attr_unique_id = f"{vin}_climate"
-        self._last_mode = HVACMode.OFF
-        self._last_command: str | None = None
-        self._pending_target_temp: float | None = None
 
     @staticmethod
     def _clamp_temp(temp_c: float | int | None) -> float | None:
@@ -103,7 +99,7 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
 
     @staticmethod
     def _preset_from_temp(temp_c: float | None) -> str | None:
-        """Return a preset name if the temperature matches a preset boundary."""
+        """Return a preset name if the temperature matches a boundary."""
         if temp_c is None:
             return None
         rounded = round(temp_c)
@@ -113,29 +109,22 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
             return BydClimate._PRESET_MAX_COOL
         return None
 
+    # ------------------------------------------------------------------
+    # State properties — read from VehicleSnapshot
+    # ------------------------------------------------------------------
+
     @property
     def hvac_mode(self) -> HVACMode:
         """Return the current HVAC mode."""
-        # After a command, prefer optimistic state until coordinator confirms.
-        if self._command_pending:
-            return self._last_mode
         hvac = self._get_hvac_status()
         if hvac is not None:
-            if not hvac.is_ac_on:
-                return HVACMode.OFF
-            # ac_on=True: trust unless vehicle is off AND no recent HVAC command
-            # (guards against stale ac_on=True after natural vehicle shutdown).
-            if not self._is_vehicle_on() and not self.coordinator.hvac_command_pending:
-                return HVACMode.OFF
-            return HVACMode.HEAT_COOL
-        if not self._is_vehicle_on():
-            return HVACMode.OFF
-        return self._last_mode
+            return HVACMode.HEAT_COOL if hvac.is_ac_on else HVACMode.OFF
+        return HVACMode.OFF
 
     @property
     def assumed_state(self) -> bool:
-        """Return True when state is assumed (command pending or no HVAC data)."""
-        return self._command_pending or self._get_hvac_status() is None
+        """Return True when state is assumed (no HVAC data)."""
+        return self._get_hvac_status() is None
 
     @property
     def current_temperature(self) -> float | None:
@@ -143,9 +132,7 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
         hvac = self._get_hvac_status()
         if hvac is not None and hvac.interior_temp_available:
             return hvac.temp_in_car
-        # Fall back to realtime data
-        realtime_map = self.coordinator.data.get("realtime", {})
-        realtime = realtime_map.get(self._vin)
+        realtime = self._get_realtime()
         if realtime is not None:
             temp = getattr(realtime, "temp_in_car", None)
             if temp is not None:
@@ -155,82 +142,12 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature."""
-        if self._pending_target_temp is not None:
-            return self._pending_target_temp
         hvac = self._get_hvac_status()
         if hvac is not None:
-            # main_setting_temp_new is already in °C (precise value from API)
             temp_c = self._clamp_temp(hvac.main_setting_temp_new)
             if temp_c is not None:
                 return temp_c
         return self._DEFAULT_TEMP_C
-
-    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        """Set HVAC mode (on/off)."""
-        temp = (
-            self._pending_target_temp or self.target_temperature or self._DEFAULT_TEMP_C
-        )
-
-        async def _call(client: Any) -> Any:
-            if hvac_mode == HVACMode.OFF:
-                return await client.stop_climate(self._vin)
-            return await client.start_climate(
-                self._vin,
-                params=ClimateStartParams(
-                    temperature=temp,
-                    time_span=self._climate_duration_code,
-                ),
-            )
-
-        self._last_command = (
-            "stop_climate" if hvac_mode == HVACMode.OFF else "start_climate"
-        )
-        self._last_mode = hvac_mode
-        await self._execute_command(self._api, _call, command=self._last_command)
-
-        # Optimistic coordinator-level HVAC update so that *all* entities
-        # (A/C switch, seats, etc.) see the new state immediately.
-        if hvac_mode == HVACMode.OFF:
-            self.coordinator.apply_optimistic_hvac(
-                ac_on=False,
-                reset_seats=True,
-            )
-        else:
-            self.coordinator.apply_optimistic_hvac(
-                ac_on=True,
-                target_temp=temp,
-            )
-
-        # Schedule a delayed refresh so the BYD cloud has time to update.
-        # The optimistic state covers the UI in the interim.
-        self._schedule_delayed_refresh()
-
-    async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set target temperature."""
-        temp = kwargs.get(ATTR_TEMPERATURE)
-        if temp is None:
-            return
-        clamped = max(self._TEMP_MIN_C, min(self._TEMP_MAX_C, float(temp)))
-        self._pending_target_temp = clamped
-
-        # If climate is currently on, send the update immediately
-        if self.hvac_mode != HVACMode.OFF:
-
-            async def _call(client: Any) -> Any:
-                return await client.start_climate(
-                    self._vin,
-                    params=ClimateStartParams(
-                        temperature=clamped,
-                        time_span=self._climate_duration_code,
-                    ),
-                )
-
-            self._last_command = "start_climate"
-            await self._execute_command(self._api, _call, command=self._last_command)
-            return
-
-        self._command_pending = True
-        self.async_write_ha_state()
 
     @property
     def preset_mode(self) -> str | None:
@@ -240,9 +157,51 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
             temp_c = self._clamp_temp(hvac.main_setting_temp_new)
             if temp_c is not None:
                 return self._preset_from_temp(temp_c)
-        if self.hvac_mode != HVACMode.OFF and self._pending_target_temp is not None:
-            return self._preset_from_temp(self._pending_target_temp)
         return None
+
+    # ------------------------------------------------------------------
+    # Commands — delegate to BydCar.hvac
+    # ------------------------------------------------------------------
+
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        """Set HVAC mode (on/off)."""
+        car = self.coordinator.car
+        if car is None:
+            return
+        if hvac_mode == HVACMode.OFF:
+            await self._execute_car_command(
+                car.hvac.stop(),
+                command="stop_climate",
+            )
+        else:
+            temp = self.target_temperature or self._DEFAULT_TEMP_C
+            await self._execute_car_command(
+                car.hvac.start(
+                    temperature=temp,
+                    duration=self._climate_duration,
+                ),
+                command="start_climate",
+            )
+
+    async def async_set_temperature(self, **kwargs: Any) -> None:
+        """Set target temperature."""
+        temp = kwargs.get(ATTR_TEMPERATURE)
+        if temp is None:
+            return
+        clamped = max(self._TEMP_MIN_C, min(self._TEMP_MAX_C, float(temp)))
+
+        # If climate is currently on, send the update immediately
+        if self.hvac_mode != HVACMode.OFF:
+            car = self.coordinator.car
+            if car is None:
+                return
+            await self._execute_car_command(
+                car.hvac.start(
+                    temperature=clamped,
+                    duration=self._climate_duration,
+                ),
+                command="start_climate",
+            )
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Activate a preset mode."""
@@ -253,53 +212,20 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
             if preset_mode == self._PRESET_MAX_HEAT
             else float(self._TEMP_MIN_C)
         )
-        self._pending_target_temp = temp_c
+        car = self.coordinator.car
+        if car is None:
+            return
+        await self._execute_car_command(
+            car.hvac.start(
+                temperature=temp_c,
+                duration=self._climate_duration,
+            ),
+            command="start_climate",
+        )
 
-        async def _call(client: Any) -> Any:
-            return await client.start_climate(
-                self._vin,
-                params=ClimateStartParams(
-                    temperature=temp_c,
-                    time_span=self._climate_duration_code,
-                ),
-            )
-
-        self._last_command = "start_climate"
-        self._last_mode = HVACMode.HEAT_COOL
-        await self._execute_command(self._api, _call, command=self._last_command)
-
-    def _handle_coordinator_update(self) -> None:
-        """Clear optimistic state when fresh data arrives from the coordinator."""
-        if not self._command_pending:
-            self._pending_target_temp = None
-        super()._handle_coordinator_update()
-
-    def _is_command_confirmed(self) -> bool:
-        """Check whether HVAC data confirms the last climate command."""
-        hvac = self._get_hvac_status()
-        if hvac is None:
-            return False
-        ac_on = hvac.is_ac_on
-        expected_on = self._last_mode != HVACMode.OFF
-        if ac_on != expected_on:
-            return False
-        # For turn-on: also wait for realtime to confirm vehicle is on before
-        # clearing _command_pending (prevents premature confirmation from
-        # the optimistic HVAC patch).
-        if expected_on and not self._is_vehicle_on():
-            return False
-        return True
-
-    _DELAYED_REFRESH_SECONDS = 20
-
-    def _schedule_delayed_refresh(self) -> None:
-        """Schedule a coordinator refresh after a short delay."""
-
-        async def _delayed() -> None:
-            await asyncio.sleep(self._DELAYED_REFRESH_SECONDS)
-            await self.coordinator.async_force_refresh()
-
-        self.hass.async_create_task(_delayed())
+    # ------------------------------------------------------------------
+    # Extra attributes
+    # ------------------------------------------------------------------
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -307,25 +233,16 @@ class BydClimate(BydVehicleEntity, ClimateEntity):
         attrs = {**super().extra_state_attributes}
         hvac = self._get_hvac_status()
         if hvac is not None:
-            # Temperatures
             attrs["exterior_temperature"] = hvac.temp_out_car
-            # copilot_setting_temp_new is already in °C;
-            # copilot_setting_temp is a BYD scale value (1-17)
             attrs["passenger_set_temperature"] = hvac.copilot_setting_temp_new
-            # Airflow
             attrs["fan_speed"] = hvac.wind_mode
             attrs["airflow_direction"] = hvac.wind_position
             attrs["recirculation"] = hvac.cycle_choice
-            # Defrost / deicing
             attrs["front_defrost"] = hvac.front_defrost_status
             attrs["rear_defrost"] = hvac.electric_defrost_status
             attrs["wiper_heat"] = hvac.wiper_heat_status
-            # Air quality
             attrs["pm25"] = hvac.pm
             attrs["pm25_exterior_state"] = hvac.pm25_state_out_car
-            # Misc
             attrs["rapid_heating"] = hvac.rapid_increase_temp_state
             attrs["rapid_cooling"] = hvac.rapid_decrease_temp_state
-        if self._last_command:
-            attrs["last_remote_command"] = self._last_command
         return attrs

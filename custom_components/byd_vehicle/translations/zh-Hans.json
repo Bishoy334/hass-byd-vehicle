@@ -95,9 +95,6 @@
       "total_mileage_v2": {
         "name": "里程表V2"
       },
-      "power_gear": {
-        "name": "档位"
-      },
       "charging_state": {
         "name": "充电状态"
       },
@@ -121,24 +118,6 @@
       },
       "booking_charging_minute": {
         "name": "预定充电分钟"
-      },
-      "left_front_tire_status": {
-        "name": "左前轮胎状态"
-      },
-      "right_front_tire_status": {
-        "name": "右前轮胎状态"
-      },
-      "left_rear_tire_status": {
-        "name": "左后轮胎状态"
-      },
-      "right_rear_tire_status": {
-        "name": "右后轮胎状态"
-      },
-      "tirepressure_system": {
-        "name": "TPMS 状态"
-      },
-      "rapid_tire_leak": {
-        "name": "轮胎快速漏气"
       },
       "total_power": {
         "name": "总功率"
@@ -164,35 +143,8 @@
       "epb": {
         "name": "电子驻车制动器"
       },
-      "eps": {
-        "name": "电动助力转向"
-      },
-      "esp": {
-        "name": "电子稳定性"
-      },
-      "abs_warning": {
-        "name": "ABS 警告"
-      },
-      "svs": {
-        "name": "请尽快保养"
-      },
-      "srs": {
-        "name": "安全气囊警告"
-      },
-      "ect": {
-        "name": "冷却液温度警告"
-      },
       "ect_value": {
         "name": "冷却液温度"
-      },
-      "pwr": {
-        "name": "电量警告"
-      },
-      "power_system": {
-        "name": "电源系统"
-      },
-      "upgrade_status": {
-        "name": "OTA 升级状态"
       },
       "refrigerator_state": {
         "name": "冰箱"
@@ -211,6 +163,48 @@
       },
       "remaining_minutes": {
         "name": "充电剩余分钟"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "nearest_energy_consumption_unit": {
+        "name": "Nearest energy consumption unit"
+      },
+      "endurance_mileage_v2_unit": {
+        "name": "Endurance mileage V2 unit"
+      },
+      "total_mileage_v2_unit": {
+        "name": "Total mileage V2 unit"
+      },
+      "rate": {
+        "name": "Rate"
+      },
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "total_consumption": {
+        "name": "Total consumption"
+      },
+      "total_consumption_en": {
+        "name": "Total consumption EN"
+      },
+      "ok_light": {
+        "name": "OK light"
+      },
+      "power_battery_connection": {
+        "name": "Power battery connection"
+      },
+      "ins": {
+        "name": "INS"
+      },
+      "repair_mode_switch": {
+        "name": "Repair mode switch"
+      },
+      "vehicle_time_zone": {
+        "name": "Vehicle time zone"
       }
     },
     "binary_sensor": {
@@ -268,21 +262,6 @@
       "skylight": {
         "name": "天窗"
       },
-      "left_front_door_lock": {
-        "name": "左前门锁"
-      },
-      "right_front_door_lock": {
-        "name": "右前门锁"
-      },
-      "left_rear_door_lock": {
-        "name": "左后门锁"
-      },
-      "right_rear_door_lock": {
-        "name": "右后门锁"
-      },
-      "sliding_door_lock": {
-        "name": "推拉门锁"
-      },
       "battery_heat_state": {
         "name": "电池加热"
       },
@@ -291,6 +270,69 @@
       },
       "vehicle_state": {
         "name": "车辆开启"
+      },
+      "abs_warning": {
+        "name": "ABS 警告"
+      },
+      "svs": {
+        "name": "请尽快保养"
+      },
+      "srs": {
+        "name": "安全气囊警告"
+      },
+      "eps": {
+        "name": "电动助力转向"
+      },
+      "esp": {
+        "name": "电子稳定性"
+      },
+      "pwr": {
+        "name": "电量警告"
+      },
+      "power_system": {
+        "name": "电源系统"
+      },
+      "ect": {
+        "name": "冷却液温度警告"
+      },
+      "tirepressure_system": {
+        "name": "TPMS 状态"
+      },
+      "rapid_tire_leak": {
+        "name": "轮胎快速漏气"
+      },
+      "left_front_tire_status": {
+        "name": "左前轮胎状态"
+      },
+      "right_front_tire_status": {
+        "name": "右前轮胎状态"
+      },
+      "left_rear_tire_status": {
+        "name": "左后轮胎状态"
+      },
+      "right_rear_tire_status": {
+        "name": "右后轮胎状态"
+      },
+      "upgrade_status": {
+        "name": "OTA 升级状态"
+      },
+      "is_charger_connected": {
+        "name": "Charger connected"
+      },
+      "oil_pressure_system": {
+        "name": "Oil pressure system"
+      },
+      "braking_system": {
+        "name": "Braking system"
+      },
+      "charging_system": {
+        "name": "Charging system"
+      },
+      "steering_system": {
+        "name": "Steering system"
+      },
+      "less_one_min": {
+        "name": "Less one min"
       }
     },
     "button": {
@@ -408,6 +450,58 @@
     "device_tracker": {
       "location": {
         "name": "地点"
+      }
+    }
+  },
+  "services": {
+    "fetch_realtime": {
+      "name": "Fetch realtime data",
+      "description": "Force-fetch the latest realtime vehicle telemetry from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_gps": {
+      "name": "Fetch GPS data",
+      "description": "Force-fetch the latest GPS location from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_hvac": {
+      "name": "Fetch HVAC status",
+      "description": "Force-fetch the latest HVAC / climate status from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_charging": {
+      "name": "Fetch charging status",
+      "description": "Force-fetch the latest charging status from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_energy": {
+      "name": "Fetch energy consumption",
+      "description": "Force-fetch the latest energy consumption data from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
       }
     }
   }

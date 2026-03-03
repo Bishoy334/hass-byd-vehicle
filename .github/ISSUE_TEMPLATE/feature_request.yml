@@ -3,6 +3,12 @@ description: Suggest an improvement for the BYD vehicle integration.
 title: "[Feature]: "
 labels: [enhancement]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        API mapping collaboration is coordinated in pyBYD issue #20: https://github.com/jkaberg/pyBYD/issues/20
+        If this request is API mapping related (new/unknown fields, endpoint mapping, payload semantics), please coordinate in that issue.
+
   - type: textarea
     id: problem
     attributes:
@@ -40,4 +46,7 @@ body:
     id: context
     attributes:
       label: Additional context
-      description: Optional logs, screenshots, or references.
+      description: |
+        Optional logs, screenshots, or references.
+        If this request relates to missing/unknown BYD fields, include redacted output from the raw fetch services documented here:
+        https://github.com/jkaberg/hass-byd-vehicle?tab=readme-ov-file#raw-api-fetch-services

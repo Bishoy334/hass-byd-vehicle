@@ -1,12 +1,8 @@
 """Buttons for BYD Vehicle remote commands."""
 
-# Pylint (v4+) can mis-infer dataclass-generated __init__ signatures for entity
-# descriptions, causing false-positive E1123 errors.
-# pylint: disable=unexpected-keyword-arg
-
 from __future__ import annotations
 
-import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -16,37 +12,37 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from pybyd import BydRemoteControlError
+from pybyd.car import BydCar
+from pybyd.models.vehicle import Vehicle
 
 from .const import DOMAIN
-from .coordinator import BydApi, BydDataUpdateCoordinator
+from .coordinator import BydDataUpdateCoordinator
 from .entity import BydVehicleEntity
-
-_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
 class BydButtonDescription(ButtonEntityDescription):
-    """Describe a BYD button."""
+    """Describe a BYD button backed by a car capability."""
 
-    method: str  # client method name to call
+    car_command: Callable[[BydCar], Awaitable[Any]]
+    """Lambda returning the capability coroutine to execute."""
 
 
 BUTTON_DESCRIPTIONS: tuple[BydButtonDescription, ...] = (
     BydButtonDescription(
         key="flash_lights",
         icon="mdi:car-light-high",
-        method="flash_lights",
+        car_command=lambda car: car.finder.flash_lights(),
     ),
     BydButtonDescription(
         key="find_car",
         icon="mdi:car-search",
-        method="find_car",
+        car_command=lambda car: car.finder.find(),
     ),
     BydButtonDescription(
         key="close_windows",
         icon="mdi:window-closed",
-        method="close_windows",
+        car_command=lambda car: car.windows.close(),
     ),
 )
 
@@ -60,18 +56,15 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     coordinators: dict[str, BydDataUpdateCoordinator] = data["coordinators"]
     gps_coordinators = data.get("gps_coordinators", {})
-    api: BydApi = data["api"]
 
     entities: list[ButtonEntity] = []
     for vin, coordinator in coordinators.items():
+        vehicle = coordinator.vehicle
         gps_coordinator = gps_coordinators.get(vin)
-        vehicle = coordinator.data.get("vehicles", {}).get(vin)
-        if vehicle is None:
-            continue
 
         entities.append(BydForcePollButton(coordinator, gps_coordinator, vin, vehicle))
         for description in BUTTON_DESCRIPTIONS:
-            entities.append(BydButton(coordinator, api, vin, vehicle, description))
+            entities.append(BydButton(coordinator, vin, vehicle, description))
 
     async_add_entities(entities)
 
@@ -85,49 +78,27 @@ class BydButton(BydVehicleEntity, ButtonEntity):
     def __init__(
         self,
         coordinator: BydDataUpdateCoordinator,
-        api: BydApi,
         vin: str,
-        vehicle: Any,
+        vehicle: Vehicle,
         description: BydButtonDescription,
     ) -> None:
         """Initialize the button."""
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_translation_key = description.key
-        self._api = api
         self._vin = vin
         self._vehicle = vehicle
         self._attr_unique_id = f"{vin}_button_{description.key}"
 
-    @property
-    def available(self) -> bool:
-        """Available when coordinator has data for this vehicle."""
-        if not super().available:
-            return False
-        return self.coordinator.data.get("vehicles", {}).get(self._vin) is not None
-
     async def async_press(self) -> None:
-        """Execute the remote command."""
-        method_name = self.entity_description.method
-
-        async def _call(client: Any) -> Any:
-            method = getattr(client, method_name, None)
-            if method is None:
-                raise HomeAssistantError(f"Command {method_name} not available")
-            return await method(self._vin)
-
-        try:
-            await self._api.async_call(_call, vin=self._vin, command=method_name)
-        except BydRemoteControlError as exc:
-            _LOGGER.warning(
-                "Button command %s sent but cloud reported failure — "
-                "assuming optimistic outcome: %s",
-                method_name,
-                exc,
-            )
+        """Execute the remote command via pyBYD capability."""
+        car = self.coordinator.car
+        if car is None:
             return
-        except Exception as exc:  # noqa: BLE001
-            raise HomeAssistantError(str(exc)) from exc
+        await self._execute_car_command(
+            self.entity_description.car_command(car),
+            command=self.entity_description.key,
+        )
 
 
 class BydForcePollButton(BydVehicleEntity, ButtonEntity):
@@ -143,19 +114,13 @@ class BydForcePollButton(BydVehicleEntity, ButtonEntity):
         coordinator: BydDataUpdateCoordinator,
         gps_coordinator: Any,
         vin: str,
-        vehicle: Any,
+        vehicle: Vehicle,
     ) -> None:
         super().__init__(coordinator)
         self._vin = vin
         self._vehicle = vehicle
         self._gps_coordinator = gps_coordinator
         self._attr_unique_id = f"{vin}_button_force_poll"
-
-    @property
-    def available(self) -> bool:
-        if not super().available:
-            return False
-        return self.coordinator.data.get("vehicles", {}).get(self._vin) is not None
 
     async def async_press(self) -> None:
         """Force-refresh all coordinators for this vehicle."""

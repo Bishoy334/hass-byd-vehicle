@@ -1,9 +1,5 @@
 """Sensors for BYD Vehicle."""
 
-# Pylint (v4+) can mis-infer dataclass-generated __init__ signatures for entity
-# descriptions, causing false-positive E1123 errors.
-# pylint: disable=unexpected-keyword-arg
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -26,38 +22,45 @@ from homeassistant.const import (
     UnitOfPressure,
     UnitOfSpeed,
     UnitOfTemperature,
+    UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pybyd.models.realtime import TirePressureUnit
+from pybyd.models.vehicle import Vehicle
 
 from .const import DOMAIN
 from .coordinator import BydDataUpdateCoordinator
 from .entity import BydVehicleEntity
-from .value_guard import FieldValidator, keep_previous_when_zero
+
+# ---------------------------------------------------------------------------
+# Simple presentation-level validators (pyBYD state engine handles deeper
+# quality guards; these cover HA display edge-cases only).
+# ---------------------------------------------------------------------------
+
+FieldValidator = Callable[[Any, Any], Any]
+
+
+def keep_previous_when_zero(previous: Any, current: Any) -> Any:
+    """Return *previous* when *current* is zero or None.
+
+    Prevents transient ``0 %`` SOC values from showing in the HA UI
+    when the vehicle sends stale/invalid telemetry.
+    """
+    if current is None or current == 0:
+        return previous
+    return current
 
 
 def _normalize_epoch(value: Any) -> datetime | None:
-    """Convert epoch-like values (sec/ms) or datetime to UTC datetime."""
+    """Ensure a pre-parsed BydTimestamp is UTC-aware, or return None."""
     if value is None:
         return None
-    # pyBYD already parses timestamps into datetime via BydTimestamp.
     if isinstance(value, datetime):
         if value.tzinfo is None:
             return value.replace(tzinfo=UTC)
         return value
-    try:
-        ts = float(value)
-    except (TypeError, ValueError):
-        return None
-    if ts <= 0:
-        return None
-    if ts > 1_000_000_000_000:
-        ts = ts / 1000
-    try:
-        return datetime.fromtimestamp(ts, tz=UTC)
-    except (OverflowError, OSError, ValueError):
-        return None
+    return None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -78,6 +81,41 @@ def _round_int_attr(attr: str) -> Callable[[Any], int | None]:
         if value is None:
             return None
         return int(round(float(value)))
+
+    return _convert
+
+
+def _parse_numeric_string(attr: str) -> Callable[[Any], float | None]:
+    """Create a converter that parses a string attribute to float.
+
+    Returns *None* for sentinel strings like ``"--"`` or non-numeric values.
+    The BYD API sends several energy-related fields as strings (e.g. ``"29.6"``).
+    """
+
+    def _convert(obj: Any) -> float | None:
+        value = getattr(obj, attr, None)
+        if value is None or value == "--":
+            return None
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return None
+
+    return _convert
+
+
+def _positive_float_attr(attr: str) -> Callable[[Any], float | None]:
+    """Create a converter returning *None* for negative sentinel values.
+
+    The BYD API uses ``-1`` as a "not available" marker for several
+    numeric fields (e.g. ``oilEndurance``).
+    """
+
+    def _convert(obj: Any) -> float | None:
+        value = getattr(obj, attr, None)
+        if value is None or value < 0:
+            return None
+        return float(value)
 
     return _convert
 
@@ -233,14 +271,6 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=_round_int_attr("total_mileage_v2"),
     ),
-    # Driving
-    BydSensorDescription(
-        key="power_gear",
-        source="realtime",
-        icon="mdi:car-shift-pattern",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
     # Charging detail from realtime
     BydSensorDescription(
         key="charging_state",
@@ -266,6 +296,9 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
     BydSensorDescription(
         key="full_hour",
         source="realtime",
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:clock-outline",
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -273,6 +306,9 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
     BydSensorDescription(
         key="full_minute",
         source="realtime",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:clock-outline",
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -280,6 +316,9 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
     BydSensorDescription(
         key="remaining_hours",
         source="realtime",
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:clock-outline",
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -287,6 +326,9 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
     BydSensorDescription(
         key="remaining_minutes",
         source="realtime",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:clock-outline",
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -312,50 +354,6 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
-    # Tire status indicators
-    BydSensorDescription(
-        key="left_front_tire_status",
-        source="realtime",
-        icon="mdi:car-tire-alert",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="right_front_tire_status",
-        source="realtime",
-        icon="mdi:car-tire-alert",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="left_rear_tire_status",
-        source="realtime",
-        icon="mdi:car-tire-alert",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="right_rear_tire_status",
-        source="realtime",
-        icon="mdi:car-tire-alert",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="tirepressure_system",
-        source="realtime",
-        icon="mdi:car-tire-alert",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="rapid_tire_leak",
-        source="realtime",
-        icon="mdi:car-tire-alert",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    # Power / energy from realtime
     BydSensorDescription(
         key="total_power",
         source="realtime",
@@ -367,28 +365,36 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
         key="nearest_energy_consumption",
         source="realtime",
         icon="mdi:lightning-bolt",
+        state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_parse_numeric_string("nearest_energy_consumption"),
     ),
     BydSensorDescription(
         key="recent_50km_energy",
         source="realtime",
         icon="mdi:lightning-bolt",
+        state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_parse_numeric_string("recent_50km_energy"),
     ),
     # Fuel (hybrid vehicles)
     BydSensorDescription(
         key="oil_endurance",
         source="realtime",
         native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:gas-station",
         entity_registry_enabled_default=True,
+        value_fn=_round_int_attr("oil_endurance"),
     ),
     BydSensorDescription(
         key="oil_percent",
         source="realtime",
         native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:gas-station",
         entity_registry_enabled_default=True,
     ),
@@ -415,72 +421,12 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     BydSensorDescription(
-        key="eps",
-        source="realtime",
-        icon="mdi:steering",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="esp",
-        source="realtime",
-        icon="mdi:car-traction-control",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="abs_warning",
-        source="realtime",
-        icon="mdi:car-brake-abs",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="svs",
-        source="realtime",
-        icon="mdi:car-wrench",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="srs",
-        source="realtime",
-        icon="mdi:airbag",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="ect",
-        source="realtime",
-        icon="mdi:coolant-temperature",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
         key="ect_value",
         source="realtime",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:coolant-temperature",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="pwr",
-        source="realtime",
-        icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="power_system",
-        source="realtime",
-        icon="mdi:flash",
-        entity_registry_enabled_default=False,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    BydSensorDescription(
-        key="upgrade_status",
-        source="realtime",
-        icon="mdi:cellphone-arrow-down",
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -498,6 +444,113 @@ SENSOR_DESCRIPTIONS: tuple[BydSensorDescription, ...] = (
         key="refrigerator_door_state",
         source="hvac",
         icon="mdi:fridge",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    # ==========================================
+    # Realtime: additional diagnostic sensors
+    #   (disabled by default — raw / unparsed)
+    # ==========================================
+    BydSensorDescription(
+        key="total_energy",
+        source="realtime",
+        icon="mdi:flash",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_parse_numeric_string("total_energy"),
+    ),
+    BydSensorDescription(
+        key="nearest_energy_consumption_unit",
+        source="realtime",
+        icon="mdi:lightning-bolt",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    BydSensorDescription(
+        key="endurance_mileage_v2_unit",
+        source="realtime",
+        icon="mdi:map-marker-distance",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    BydSensorDescription(
+        key="total_mileage_v2_unit",
+        source="realtime",
+        icon="mdi:counter",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    # Charge rate
+    BydSensorDescription(
+        key="rate",
+        source="realtime",
+        icon="mdi:ev-station",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    # Energy consumption strings
+    BydSensorDescription(
+        key="energy_consumption",
+        source="realtime",
+        icon="mdi:lightning-bolt",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_parse_numeric_string("energy_consumption"),
+    ),
+    BydSensorDescription(
+        key="total_consumption",
+        source="realtime",
+        icon="mdi:lightning-bolt",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_parse_numeric_string("total_consumption"),
+    ),
+    BydSensorDescription(
+        key="total_consumption_en",
+        source="realtime",
+        icon="mdi:lightning-bolt",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_parse_numeric_string("total_consumption_en"),
+    ),
+    # Warning indicators (as numeric sensors)
+    BydSensorDescription(
+        key="ok_light",
+        source="realtime",
+        icon="mdi:check-circle",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    BydSensorDescription(
+        key="power_battery_connection",
+        source="realtime",
+        icon="mdi:battery-alert",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    BydSensorDescription(
+        key="ins",
+        source="realtime",
+        icon="mdi:shield-car",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    # Misc
+    BydSensorDescription(
+        key="repair_mode_switch",
+        source="realtime",
+        icon="mdi:wrench",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    BydSensorDescription(
+        key="vehicle_time_zone",
+        source="realtime",
+        icon="mdi:clock-outline",
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -533,9 +586,7 @@ async def async_setup_entry(
 
     entities: list[SensorEntity] = []
     for vin, coordinator in coordinators.items():
-        vehicle = coordinator.data.get("vehicles", {}).get(vin)
-        if vehicle is None:
-            continue
+        vehicle = coordinator.vehicle
         for description in SENSOR_DESCRIPTIONS:
             if description.key == "gps_last_updated":
                 gps_coordinator = gps_coordinators.get(vin)
@@ -564,7 +615,11 @@ _TIRE_UNIT_MAP = {
 
 
 class BydSensor(BydVehicleEntity, SensorEntity):
-    """Representation of a BYD vehicle sensor."""
+    """Representation of a BYD vehicle sensor.
+
+    All state is read from ``VehicleSnapshot`` sections via the
+    base-class ``_get_source_obj()`` helper. No local shadow state.
+    """
 
     _attr_has_entity_name = True
     entity_description: BydSensorDescription
@@ -573,7 +628,7 @@ class BydSensor(BydVehicleEntity, SensorEntity):
         self,
         coordinator: BydDataUpdateCoordinator,
         vin: str,
-        vehicle: Any,
+        vehicle: Vehicle,
         description: BydSensorDescription,
     ) -> None:
         """Initialize the sensor."""
@@ -586,9 +641,6 @@ class BydSensor(BydVehicleEntity, SensorEntity):
         self._last_native_value: Any | None = None
 
         # Auto-disable sensors that return no data on first fetch.
-        # If the description already disables the entity we leave it alone.
-        # Otherwise we probe the initial data: if the car didn't return a
-        # usable value the sensor is disabled so it stays out of the way.
         if description.entity_registry_enabled_default is not False:
             if self._resolve_validated_value() is None:
                 self._attr_entity_registry_enabled_default = False
@@ -597,26 +649,31 @@ class BydSensor(BydVehicleEntity, SensorEntity):
     # Helpers
     # ------------------------------------------------------------------
 
-    def _get_source_obj(self, source: str = "") -> Any | None:
-        """Return the model object for this sensor's source."""
-        return super()._get_source_obj(source or self.entity_description.source)
-
     def _resolve_value(self) -> Any:
         """Extract the current value using the description's extraction logic."""
-        if self.entity_description.key == "last_updated":
-            realtime = self.coordinator.data.get("realtime", {}).get(self._vin)
+        key = self.entity_description.key
+
+        # Timestamp sensors use the snapshot section's timestamp attribute.
+        if key == "last_updated":
+            realtime = self._get_realtime()
             if realtime is None:
                 return None
             return _normalize_epoch(getattr(realtime, "timestamp", None))
-        if self.entity_description.key == "gps_last_updated":
-            gps = self.coordinator.data.get("gps", {}).get(self._vin)
+
+        if key == "gps_last_updated":
+            gps = self._get_gps()
+            if gps is None:
+                return None
             return _normalize_epoch(getattr(gps, "gps_timestamp", None))
-        obj = self._get_source_obj()
+
+        obj = self._get_source_obj(self.entity_description.source)
         if obj is None:
             return None
+
         if self.entity_description.value_fn is not None:
             return self.entity_description.value_fn(obj)
-        attr = self.entity_description.attr_key or self.entity_description.key
+
+        attr = self.entity_description.attr_key or key
         value = getattr(obj, attr, None)
         enum_value = getattr(value, "value", None)
         if isinstance(enum_value, int):
@@ -642,7 +699,10 @@ class BydSensor(BydVehicleEntity, SensorEntity):
         """Return True when the coordinator has data for this source."""
         if self.entity_description.key in ("last_updated", "gps_last_updated"):
             return super().available and self._resolve_value() is not None
-        return super().available and self._get_source_obj() is not None
+        return (
+            super().available
+            and self._get_source_obj(self.entity_description.source) is not None
+        )
 
     @property
     def native_unit_of_measurement(self) -> str | None:
@@ -650,7 +710,7 @@ class BydSensor(BydVehicleEntity, SensorEntity):
         desc_unit = self.entity_description.native_unit_of_measurement
         if self.entity_description.key not in _TIRE_PRESSURE_KEYS:
             return desc_unit
-        obj = self._get_source_obj()
+        obj = self._get_source_obj(self.entity_description.source)
         if obj is not None:
             api_unit = getattr(obj, "tire_press_unit", None)
             if api_unit is not None:

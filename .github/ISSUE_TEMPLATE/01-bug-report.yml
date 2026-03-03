@@ -6,8 +6,11 @@ body:
   - type: markdown
     attributes:
       value: |
-        IMPORTANT!: Before filing a bug report, please make sure you have verified your observed bug report with how the BYD mobile app works. 
+        IMPORTANT: Before filing a bug report, please make sure you have verified your observed bug report with how the BYD mobile app works. 
         The integration shares the same API as the app, so if the app doesn't work as expected, the integration won't either. If you can reproduce the issue in the app, please report it to BYD support.
+
+        API mapping collaboration is coordinated in pyBYD issue #20: https://github.com/jkaberg/pyBYD/issues/20
+        If your bug is about API mapping/new fields/payload interpretation, please coordinate there as well.
 
   - type: textarea
     id: what-happened
@@ -60,6 +63,7 @@ body:
       description: |
         Please paste relevant **debug** logs. Redact VIN, tokens, email, and account identifiers.
         To enable debug logging, see [Debug logging instructions](https://github.com/jkaberg/hass-byd-vehicle?tab=readme-ov-file#debug-logging-home-assistant--pybyd).
+        For data/parsing issues, also run the raw fetch service calls and include the matching log lines (redacted): [Raw API fetch services](https://github.com/jkaberg/hass-byd-vehicle?tab=readme-ov-file#raw-api-fetch-services).
 
         ⚠️ Issues without valid debug logs will be automatically closed.
       placeholder: |

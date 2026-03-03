@@ -95,9 +95,6 @@
       "total_mileage_v2": {
         "name": "Matkamittari V2"
       },
-      "power_gear": {
-        "name": "Vaihteen asento"
-      },
       "charging_state": {
         "name": "Lataustila"
       },
@@ -128,24 +125,6 @@
       "booking_charging_minute": {
         "name": "Ajastetun latauksen minuutti"
       },
-      "left_front_tire_status": {
-        "name": "Vasen eturenkaan tila"
-      },
-      "right_front_tire_status": {
-        "name": "Oikea eturenkaan tila"
-      },
-      "left_rear_tire_status": {
-        "name": "Vasen takarenkaan tila"
-      },
-      "right_rear_tire_status": {
-        "name": "Oikea takarenkaan tila"
-      },
-      "tirepressure_system": {
-        "name": "Rengaspainejärjestelmän tila"
-      },
-      "rapid_tire_leak": {
-        "name": "Nopea rengasvuoto"
-      },
       "total_power": {
         "name": "Kokonaisteho"
       },
@@ -170,35 +149,8 @@
       "epb": {
         "name": "Sähköinen seisontajarru"
       },
-      "eps": {
-        "name": "Sähköinen ohjaustehostin"
-      },
-      "esp": {
-        "name": "Elektroninen ajonvakautus"
-      },
-      "abs_warning": {
-        "name": "ABS-varoitus"
-      },
-      "svs": {
-        "name": "Huolto pian"
-      },
-      "srs": {
-        "name": "Turvatyynyn varoitus"
-      },
-      "ect": {
-        "name": "Jäähdytysnesteen lämpötilavaroitus"
-      },
       "ect_value": {
         "name": "Jäähdytysnesteen lämpötila"
-      },
-      "pwr": {
-        "name": "Tehovaroitus"
-      },
-      "power_system": {
-        "name": "Voimansiirtojärjestelmä"
-      },
-      "upgrade_status": {
-        "name": "OTA-päivityksen tila"
       },
       "refrigerator_state": {
         "name": "Jääkaappi"
@@ -211,6 +163,48 @@
       },
       "gps_last_updated": {
         "name": "GPS viimeksi päivitetty"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "nearest_energy_consumption_unit": {
+        "name": "Nearest energy consumption unit"
+      },
+      "endurance_mileage_v2_unit": {
+        "name": "Endurance mileage V2 unit"
+      },
+      "total_mileage_v2_unit": {
+        "name": "Total mileage V2 unit"
+      },
+      "rate": {
+        "name": "Rate"
+      },
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "total_consumption": {
+        "name": "Total consumption"
+      },
+      "total_consumption_en": {
+        "name": "Total consumption EN"
+      },
+      "ok_light": {
+        "name": "OK light"
+      },
+      "power_battery_connection": {
+        "name": "Power battery connection"
+      },
+      "ins": {
+        "name": "INS"
+      },
+      "repair_mode_switch": {
+        "name": "Repair mode switch"
+      },
+      "vehicle_time_zone": {
+        "name": "Vehicle time zone"
       }
     },
     "binary_sensor": {
@@ -268,21 +262,6 @@
       "skylight": {
         "name": "Kattoikkuna"
       },
-      "left_front_door_lock": {
-        "name": "Vasen etuoven lukko"
-      },
-      "right_front_door_lock": {
-        "name": "Oikea etuoven lukko"
-      },
-      "left_rear_door_lock": {
-        "name": "Vasen takaoven lukko"
-      },
-      "right_rear_door_lock": {
-        "name": "Oikea takaoven lukko"
-      },
-      "sliding_door_lock": {
-        "name": "Liukuoven lukko"
-      },
       "battery_heat_state": {
         "name": "Akun lämmitys"
       },
@@ -291,6 +270,69 @@
       },
       "vehicle_state": {
         "name": "Ajoneuvo päällä"
+      },
+      "abs_warning": {
+        "name": "ABS-varoitus"
+      },
+      "svs": {
+        "name": "Huolto pian"
+      },
+      "srs": {
+        "name": "Turvatyynyn varoitus"
+      },
+      "eps": {
+        "name": "Sähköinen ohjaustehostin"
+      },
+      "esp": {
+        "name": "Elektroninen ajonvakautus"
+      },
+      "pwr": {
+        "name": "Tehovaroitus"
+      },
+      "power_system": {
+        "name": "Voimansiirtojärjestelmä"
+      },
+      "ect": {
+        "name": "Jäähdytysnesteen lämpötilavaroitus"
+      },
+      "tirepressure_system": {
+        "name": "Rengaspainejärjestelmän tila"
+      },
+      "rapid_tire_leak": {
+        "name": "Nopea rengasvuoto"
+      },
+      "left_front_tire_status": {
+        "name": "Vasen eturenkaan tila"
+      },
+      "right_front_tire_status": {
+        "name": "Oikea eturenkaan tila"
+      },
+      "left_rear_tire_status": {
+        "name": "Vasen takarenkaan tila"
+      },
+      "right_rear_tire_status": {
+        "name": "Oikea takarenkaan tila"
+      },
+      "upgrade_status": {
+        "name": "OTA-päivityksen tila"
+      },
+      "is_charger_connected": {
+        "name": "Charger connected"
+      },
+      "oil_pressure_system": {
+        "name": "Oil pressure system"
+      },
+      "braking_system": {
+        "name": "Braking system"
+      },
+      "charging_system": {
+        "name": "Charging system"
+      },
+      "steering_system": {
+        "name": "Steering system"
+      },
+      "less_one_min": {
+        "name": "Less one min"
       }
     },
     "button": {
@@ -408,6 +450,58 @@
     "device_tracker": {
       "location": {
         "name": "Sijainti"
+      }
+    }
+  },
+  "services": {
+    "fetch_realtime": {
+      "name": "Fetch realtime data",
+      "description": "Force-fetch the latest realtime vehicle telemetry from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_gps": {
+      "name": "Fetch GPS data",
+      "description": "Force-fetch the latest GPS location from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_hvac": {
+      "name": "Fetch HVAC status",
+      "description": "Force-fetch the latest HVAC / climate status from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_charging": {
+      "name": "Fetch charging status",
+      "description": "Force-fetch the latest charging status from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_energy": {
+      "name": "Fetch energy consumption",
+      "description": "Force-fetch the latest energy consumption data from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
       }
     }
   }

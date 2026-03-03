@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from homeassistant.const import Platform
-from pybyd import VALID_CLIMATE_DURATIONS
 
 DOMAIN = "byd_vehicle"
 
@@ -40,9 +39,6 @@ DEFAULT_CLIMATE_DURATION = 10
 DEFAULT_DEBUG_DUMPS = False
 DEFAULT_COUNTRY = "Netherlands"
 DEFAULT_LANGUAGE = "en"
-
-# Duration dropdown values (minutes) for remote climate start.
-CLIMATE_DURATION_OPTIONS: tuple[int, ...] = VALID_CLIMATE_DURATIONS
 
 MIN_POLL_INTERVAL = 30
 MAX_POLL_INTERVAL = 900

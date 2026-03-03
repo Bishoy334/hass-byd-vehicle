@@ -95,9 +95,6 @@
       "total_mileage_v2": {
         "name": "Kilometerteller V2"
       },
-      "power_gear": {
-        "name": "Versnellingspositie"
-      },
       "charging_state": {
         "name": "Oplaadstatus"
       },
@@ -121,24 +118,6 @@
       },
       "booking_charging_minute": {
         "name": "Geplande oplaadminuut"
-      },
-      "left_front_tire_status": {
-        "name": "Bandenstatus linksvoor"
-      },
-      "right_front_tire_status": {
-        "name": "Bandenstatus rechtsvoor"
-      },
-      "left_rear_tire_status": {
-        "name": "Bandenstatus linksachter"
-      },
-      "right_rear_tire_status": {
-        "name": "Bandenstatus rechtsachter"
-      },
-      "tirepressure_system": {
-        "name": "TPMS staat"
-      },
-      "rapid_tire_leak": {
-        "name": "Snelle bandenlekkage"
       },
       "total_power": {
         "name": "Totaal vermogen"
@@ -164,35 +143,8 @@
       "epb": {
         "name": "Elektronische parkeerrem"
       },
-      "eps": {
-        "name": "Elektrische stuurbekrachtiging"
-      },
-      "esp": {
-        "name": "Elektronische stabiliteit"
-      },
-      "abs_warning": {
-        "name": "ABS waarschuwing"
-      },
-      "svs": {
-        "name": "Onderhoud vereist"
-      },
-      "srs": {
-        "name": "Airbagwaarschuwing"
-      },
-      "ect": {
-        "name": "Waarschuwing koelvloeistoftemperatuur"
-      },
       "ect_value": {
         "name": "Koelvloeistof temperatuur"
-      },
-      "pwr": {
-        "name": "Waarschuwing voor stroom"
-      },
-      "power_system": {
-        "name": "Voedingssysteem"
-      },
-      "upgrade_status": {
-        "name": "OTA upgradestatus"
       },
       "refrigerator_state": {
         "name": "Koelkast"
@@ -211,6 +163,48 @@
       },
       "remaining_minutes": {
         "name": "Resterende laadtijd (minuten)"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "nearest_energy_consumption_unit": {
+        "name": "Nearest energy consumption unit"
+      },
+      "endurance_mileage_v2_unit": {
+        "name": "Endurance mileage V2 unit"
+      },
+      "total_mileage_v2_unit": {
+        "name": "Total mileage V2 unit"
+      },
+      "rate": {
+        "name": "Rate"
+      },
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "total_consumption": {
+        "name": "Total consumption"
+      },
+      "total_consumption_en": {
+        "name": "Total consumption EN"
+      },
+      "ok_light": {
+        "name": "OK light"
+      },
+      "power_battery_connection": {
+        "name": "Power battery connection"
+      },
+      "ins": {
+        "name": "INS"
+      },
+      "repair_mode_switch": {
+        "name": "Repair mode switch"
+      },
+      "vehicle_time_zone": {
+        "name": "Vehicle time zone"
       }
     },
     "binary_sensor": {
@@ -268,21 +262,6 @@
       "skylight": {
         "name": "Schuifdak"
       },
-      "left_front_door_lock": {
-        "name": "Deurslot linksvoor"
-      },
-      "right_front_door_lock": {
-        "name": "Deurslot rechtsvoor"
-      },
-      "left_rear_door_lock": {
-        "name": "Deurslot linksachter"
-      },
-      "right_rear_door_lock": {
-        "name": "Deurslot rechtsachter"
-      },
-      "sliding_door_lock": {
-        "name": "Schuifdeurslot"
-      },
       "battery_heat_state": {
         "name": "Batterij verwarming"
       },
@@ -291,6 +270,69 @@
       },
       "vehicle_state": {
         "name": "Voertuig aan"
+      },
+      "abs_warning": {
+        "name": "ABS waarschuwing"
+      },
+      "svs": {
+        "name": "Onderhoud vereist"
+      },
+      "srs": {
+        "name": "Airbagwaarschuwing"
+      },
+      "eps": {
+        "name": "Elektrische stuurbekrachtiging"
+      },
+      "esp": {
+        "name": "Elektronische stabiliteit"
+      },
+      "pwr": {
+        "name": "Waarschuwing voor stroom"
+      },
+      "power_system": {
+        "name": "Voedingssysteem"
+      },
+      "ect": {
+        "name": "Waarschuwing koelvloeistoftemperatuur"
+      },
+      "tirepressure_system": {
+        "name": "TPMS staat"
+      },
+      "rapid_tire_leak": {
+        "name": "Snelle bandenlekkage"
+      },
+      "left_front_tire_status": {
+        "name": "Bandenstatus linksvoor"
+      },
+      "right_front_tire_status": {
+        "name": "Bandenstatus rechtsvoor"
+      },
+      "left_rear_tire_status": {
+        "name": "Bandenstatus linksachter"
+      },
+      "right_rear_tire_status": {
+        "name": "Bandenstatus rechtsachter"
+      },
+      "upgrade_status": {
+        "name": "OTA upgradestatus"
+      },
+      "is_charger_connected": {
+        "name": "Charger connected"
+      },
+      "oil_pressure_system": {
+        "name": "Oil pressure system"
+      },
+      "braking_system": {
+        "name": "Braking system"
+      },
+      "charging_system": {
+        "name": "Charging system"
+      },
+      "steering_system": {
+        "name": "Steering system"
+      },
+      "less_one_min": {
+        "name": "Less one min"
       }
     },
     "button": {
@@ -408,6 +450,58 @@
     "device_tracker": {
       "location": {
         "name": "Locatie"
+      }
+    }
+  },
+  "services": {
+    "fetch_realtime": {
+      "name": "Fetch realtime data",
+      "description": "Force-fetch the latest realtime vehicle telemetry from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_gps": {
+      "name": "Fetch GPS data",
+      "description": "Force-fetch the latest GPS location from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_hvac": {
+      "name": "Fetch HVAC status",
+      "description": "Force-fetch the latest HVAC / climate status from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_charging": {
+      "name": "Fetch charging status",
+      "description": "Force-fetch the latest charging status from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_energy": {
+      "name": "Fetch energy consumption",
+      "description": "Force-fetch the latest energy consumption data from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
       }
     }
   }

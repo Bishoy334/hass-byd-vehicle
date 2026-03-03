@@ -195,6 +195,9 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+# Local Home Assistant docker dev runtime
+.ha-dev/
+
 # PyPI configuration file
 .pypirc
 

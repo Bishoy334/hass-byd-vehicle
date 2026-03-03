@@ -88,6 +88,12 @@ Integration**, and search for **BYD Vehicle**.
 - Realtime and GPS fetches now use pyBYD cache-aware `stale_after` behavior,
   allowing scheduled coordinator polls to skip expensive trigger/poll API calls
   when MQTT/cache data is already fresh.
+- Remote command ACK lifecycle ownership (pending registration, deterministic
+  matching, expiry, and diagnostics) is handled by pyBYD. This integration
+  consumes pyBYD lifecycle events and emits Home Assistant event-bus events.
+- Correlation remains deterministic and strict by `(vin, request_serial)` only;
+  serial-less MQTT ACKs are diagnostics-only (`uncorrelated`) and never resolve
+  pending commands.
 - A unique device fingerprint is generated per config entry to identify the
   integration to the BYD API.
 
@@ -132,10 +138,49 @@ Where to view logs:
 Tip: enable debug logging only while troubleshooting, as it can produce large
 log volumes and may include sensitive vehicle metadata.
 
+### Raw API fetch services
+
+Dedicated services are available to force-fetch raw BYD endpoint payloads for
+troubleshooting and for mapping unknown/new fields.
+
+- `byd_vehicle.fetch_realtime` — Fetches raw realtime telemetry payload.
+- `byd_vehicle.fetch_gps` — Fetches raw GPS/location payload.
+- `byd_vehicle.fetch_hvac` — Fetches raw HVAC/climate payload.
+- `byd_vehicle.fetch_charging` — Fetches raw charging payload.
+- `byd_vehicle.fetch_energy` — Fetches raw energy consumption payload.
+
+How to use from **Developer Tools → Actions**:
+
+1. Choose the action (for example `byd_vehicle.fetch_energy`).
+2. Pick your BYD device in the **Device** field.
+3. Run the action.
+4. Inspect logs for the raw payload output.
+
+Example automation/script action:
+
+```yaml
+action: byd_vehicle.fetch_energy
+data:
+  device_id:
+    - "YOUR_DEVICE_ID"
+```
+
+Payloads are logged by `custom_components.byd_vehicle` at `INFO` level. Ensure
+your logger configuration includes at least `INFO` (or `DEBUG`) for that logger.
+
+> [!CAUTION]
+> Raw payload logs may contain sensitive vehicle metadata. Redact VINs,
+> account identifiers, and any other private details before sharing logs.
+
 ## Contributing
 
+- API mapping collaboration is coordinated in pyBYD issue #20:
+  https://github.com/jkaberg/pyBYD/issues/20
+- For API mapping bugs and feature requests (new/unknown fields, endpoint
+  mapping gaps, payload interpretation), coordinate in that issue so tracking
+  stays centralized.
 - Open issues with the provided templates:
-  - Bug report: `.github/ISSUE_TEMPLATE/bug_report.yml`
+  - Bug report: `.github/ISSUE_TEMPLATE/01-bug-report.yml`
   - Feature request: `.github/ISSUE_TEMPLATE/feature_request.yml`
 - Use Discussions for support/how-to questions: https://github.com/jkaberg/hass-byd-vehicle/discussions
 - Pull requests must use `.github/pull_request_template.md` and include:

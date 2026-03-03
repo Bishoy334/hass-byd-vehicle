@@ -11,6 +11,7 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pybyd import (
+    VALID_CLIMATE_DURATIONS,
     BydApiError,
     BydAuthenticationError,
     BydClient,
@@ -21,7 +22,6 @@ from pybyd.config import BydConfig
 
 from .const import (
     BASE_URLS,
-    CLIMATE_DURATION_OPTIONS,
     CONF_BASE_URL,
     CONF_CLIMATE_DURATION,
     CONF_CONTROL_PIN,
@@ -64,7 +64,7 @@ def _bounded_int(min_value: int, max_value: int) -> vol.All:
 
 
 _CLIMATE_DURATION_LABELS: dict[int, str] = {
-    minutes: f"{minutes} min" for minutes in CLIMATE_DURATION_OPTIONS
+    minutes: f"{minutes} min" for minutes in VALID_CLIMATE_DURATIONS
 }
 _CLIMATE_DURATION_LEGACY_CODE_TO_MINUTES: dict[int, int] = {
     1: 10,
@@ -88,7 +88,7 @@ def _normalize_climate_duration_minutes(value: Any) -> int:
     except (TypeError, ValueError):
         return DEFAULT_CLIMATE_DURATION
 
-    if raw in CLIMATE_DURATION_OPTIONS:
+    if raw in VALID_CLIMATE_DURATIONS:
         return raw
     if raw in _CLIMATE_DURATION_LEGACY_CODE_TO_MINUTES:
         return _CLIMATE_DURATION_LEGACY_CODE_TO_MINUTES[raw]

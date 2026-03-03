@@ -95,9 +95,6 @@
       "total_mileage_v2": {
         "name": "Odometr V2"
       },
-      "power_gear": {
-        "name": "Vites holati"
-      },
       "charging_state": {
         "name": "Zaryadlash holati"
       },
@@ -121,24 +118,6 @@
       },
       "booking_charging_minute": {
         "name": "Rejalashtirilgan zaryadlash daqiqasi"
-      },
-      "left_front_tire_status": {
-        "name": "Old chap shina holati"
-      },
-      "right_front_tire_status": {
-        "name": "Old o'ng shina holati"
-      },
-      "left_rear_tire_status": {
-        "name": "Orqa chap shina holati"
-      },
-      "right_rear_tire_status": {
-        "name": "Orqa o'ng shina holati"
-      },
-      "tirepressure_system": {
-        "name": "TPMS holati"
-      },
-      "rapid_tire_leak": {
-        "name": "Shinalarning tez oqishi"
       },
       "total_power": {
         "name": "Umumiy quvvat"
@@ -164,35 +143,8 @@
       "epb": {
         "name": "Elektron to'xtash tormozi"
       },
-      "eps": {
-        "name": "Rulda elektr quvvati"
-      },
-      "esp": {
-        "name": "Elektron barqarorlik"
-      },
-      "abs_warning": {
-        "name": "ABS ogohlantirish"
-      },
-      "svs": {
-        "name": "Xizmat talab qilinadi"
-      },
-      "srs": {
-        "name": "Havo yostig'i haqida ogohlantirish"
-      },
-      "ect": {
-        "name": "Sovutgich harorati haqida ogohlantirish"
-      },
       "ect_value": {
         "name": "Sovutish suvi harorati"
-      },
-      "pwr": {
-        "name": "Quvvat haqida ogohlantirish"
-      },
-      "power_system": {
-        "name": "Quvvat tizimi"
-      },
-      "upgrade_status": {
-        "name": "OTA yangilanish holati"
       },
       "refrigerator_state": {
         "name": "Muzlatgich"
@@ -211,6 +163,48 @@
       },
       "remaining_minutes": {
         "name": "Qolgan zaryadlash daqiqalari"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "nearest_energy_consumption_unit": {
+        "name": "Nearest energy consumption unit"
+      },
+      "endurance_mileage_v2_unit": {
+        "name": "Endurance mileage V2 unit"
+      },
+      "total_mileage_v2_unit": {
+        "name": "Total mileage V2 unit"
+      },
+      "rate": {
+        "name": "Rate"
+      },
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "total_consumption": {
+        "name": "Total consumption"
+      },
+      "total_consumption_en": {
+        "name": "Total consumption EN"
+      },
+      "ok_light": {
+        "name": "OK light"
+      },
+      "power_battery_connection": {
+        "name": "Power battery connection"
+      },
+      "ins": {
+        "name": "INS"
+      },
+      "repair_mode_switch": {
+        "name": "Repair mode switch"
+      },
+      "vehicle_time_zone": {
+        "name": "Vehicle time zone"
       }
     },
     "binary_sensor": {
@@ -268,21 +262,6 @@
       "skylight": {
         "name": "Lyuk"
       },
-      "left_front_door_lock": {
-        "name": "Old chap eshik qulfi"
-      },
-      "right_front_door_lock": {
-        "name": "Old o'ng eshik qulfi"
-      },
-      "left_rear_door_lock": {
-        "name": "Orqa chap eshik qulfi"
-      },
-      "right_rear_door_lock": {
-        "name": "Orqa o'ng eshik qulfi"
-      },
-      "sliding_door_lock": {
-        "name": "Sirpanma eshik qulfi"
-      },
       "battery_heat_state": {
         "name": "Batareyani isitish"
       },
@@ -291,6 +270,69 @@
       },
       "vehicle_state": {
         "name": "Avtomobil yoqilgan"
+      },
+      "abs_warning": {
+        "name": "ABS ogohlantirish"
+      },
+      "svs": {
+        "name": "Xizmat talab qilinadi"
+      },
+      "srs": {
+        "name": "Havo yostig'i haqida ogohlantirish"
+      },
+      "eps": {
+        "name": "Rulda elektr quvvati"
+      },
+      "esp": {
+        "name": "Elektron barqarorlik"
+      },
+      "pwr": {
+        "name": "Quvvat haqida ogohlantirish"
+      },
+      "power_system": {
+        "name": "Quvvat tizimi"
+      },
+      "ect": {
+        "name": "Sovutgich harorati haqida ogohlantirish"
+      },
+      "tirepressure_system": {
+        "name": "TPMS holati"
+      },
+      "rapid_tire_leak": {
+        "name": "Shinalarning tez oqishi"
+      },
+      "left_front_tire_status": {
+        "name": "Old chap shina holati"
+      },
+      "right_front_tire_status": {
+        "name": "Old o'ng shina holati"
+      },
+      "left_rear_tire_status": {
+        "name": "Orqa chap shina holati"
+      },
+      "right_rear_tire_status": {
+        "name": "Orqa o'ng shina holati"
+      },
+      "upgrade_status": {
+        "name": "OTA yangilanish holati"
+      },
+      "is_charger_connected": {
+        "name": "Charger connected"
+      },
+      "oil_pressure_system": {
+        "name": "Oil pressure system"
+      },
+      "braking_system": {
+        "name": "Braking system"
+      },
+      "charging_system": {
+        "name": "Charging system"
+      },
+      "steering_system": {
+        "name": "Steering system"
+      },
+      "less_one_min": {
+        "name": "Less one min"
       }
     },
     "button": {
@@ -408,6 +450,58 @@
     "device_tracker": {
       "location": {
         "name": "Joylashuv"
+      }
+    }
+  },
+  "services": {
+    "fetch_realtime": {
+      "name": "Fetch realtime data",
+      "description": "Force-fetch the latest realtime vehicle telemetry from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_gps": {
+      "name": "Fetch GPS data",
+      "description": "Force-fetch the latest GPS location from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_hvac": {
+      "name": "Fetch HVAC status",
+      "description": "Force-fetch the latest HVAC / climate status from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_charging": {
+      "name": "Fetch charging status",
+      "description": "Force-fetch the latest charging status from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_energy": {
+      "name": "Fetch energy consumption",
+      "description": "Force-fetch the latest energy consumption data from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
       }
     }
   }

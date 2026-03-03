@@ -95,9 +95,6 @@
       "total_mileage_v2": {
         "name": "オドメーター V2"
       },
-      "power_gear": {
-        "name": "ギアポジション"
-      },
       "charging_state": {
         "name": "充電状態"
       },
@@ -121,24 +118,6 @@
       },
       "booking_charging_minute": {
         "name": "予定充電分"
-      },
-      "left_front_tire_status": {
-        "name": "左前タイヤの状態"
-      },
-      "right_front_tire_status": {
-        "name": "右前タイヤの状態"
-      },
-      "left_rear_tire_status": {
-        "name": "左後タイヤの状態"
-      },
-      "right_rear_tire_status": {
-        "name": "右後輪タイヤの状態"
-      },
-      "tirepressure_system": {
-        "name": "TPMS 状態"
-      },
-      "rapid_tire_leak": {
-        "name": "急速なタイヤ漏れ"
       },
       "total_power": {
         "name": "総電力"
@@ -164,35 +143,8 @@
       "epb": {
         "name": "電子パーキングブレーキ"
       },
-      "eps": {
-        "name": "電動パワーステアリング"
-      },
-      "esp": {
-        "name": "横滑り防止装置"
-      },
-      "abs_warning": {
-        "name": "ABS 警告"
-      },
-      "svs": {
-        "name": "要点検"
-      },
-      "srs": {
-        "name": "エアバッグ警告"
-      },
-      "ect": {
-        "name": "冷却水温度警告"
-      },
       "ect_value": {
         "name": "冷却水温度"
-      },
-      "pwr": {
-        "name": "電力警告"
-      },
-      "power_system": {
-        "name": "電源システム"
-      },
-      "upgrade_status": {
-        "name": "OTA アップグレード ステータス"
       },
       "refrigerator_state": {
         "name": "冷蔵庫"
@@ -211,6 +163,48 @@
       },
       "remaining_minutes": {
         "name": "残り充電分数"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "nearest_energy_consumption_unit": {
+        "name": "Nearest energy consumption unit"
+      },
+      "endurance_mileage_v2_unit": {
+        "name": "Endurance mileage V2 unit"
+      },
+      "total_mileage_v2_unit": {
+        "name": "Total mileage V2 unit"
+      },
+      "rate": {
+        "name": "Rate"
+      },
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "total_consumption": {
+        "name": "Total consumption"
+      },
+      "total_consumption_en": {
+        "name": "Total consumption EN"
+      },
+      "ok_light": {
+        "name": "OK light"
+      },
+      "power_battery_connection": {
+        "name": "Power battery connection"
+      },
+      "ins": {
+        "name": "INS"
+      },
+      "repair_mode_switch": {
+        "name": "Repair mode switch"
+      },
+      "vehicle_time_zone": {
+        "name": "Vehicle time zone"
       }
     },
     "binary_sensor": {
@@ -268,21 +262,6 @@
       "skylight": {
         "name": "天窓"
       },
-      "left_front_door_lock": {
-        "name": "左前ドアロック"
-      },
-      "right_front_door_lock": {
-        "name": "フロント右ドアロック"
-      },
-      "left_rear_door_lock": {
-        "name": "後部左ドアロック"
-      },
-      "right_rear_door_lock": {
-        "name": "右後部ドアロック"
-      },
-      "sliding_door_lock": {
-        "name": "スライドドアロック"
-      },
       "battery_heat_state": {
         "name": "バッテリーの加熱"
       },
@@ -291,6 +270,69 @@
       },
       "vehicle_state": {
         "name": "車両オン"
+      },
+      "abs_warning": {
+        "name": "ABS 警告"
+      },
+      "svs": {
+        "name": "要点検"
+      },
+      "srs": {
+        "name": "エアバッグ警告"
+      },
+      "eps": {
+        "name": "電動パワーステアリング"
+      },
+      "esp": {
+        "name": "横滑り防止装置"
+      },
+      "pwr": {
+        "name": "電力警告"
+      },
+      "power_system": {
+        "name": "電源システム"
+      },
+      "ect": {
+        "name": "冷却水温度警告"
+      },
+      "tirepressure_system": {
+        "name": "TPMS 状態"
+      },
+      "rapid_tire_leak": {
+        "name": "急速なタイヤ漏れ"
+      },
+      "left_front_tire_status": {
+        "name": "左前タイヤの状態"
+      },
+      "right_front_tire_status": {
+        "name": "右前タイヤの状態"
+      },
+      "left_rear_tire_status": {
+        "name": "左後タイヤの状態"
+      },
+      "right_rear_tire_status": {
+        "name": "右後輪タイヤの状態"
+      },
+      "upgrade_status": {
+        "name": "OTA アップグレード ステータス"
+      },
+      "is_charger_connected": {
+        "name": "Charger connected"
+      },
+      "oil_pressure_system": {
+        "name": "Oil pressure system"
+      },
+      "braking_system": {
+        "name": "Braking system"
+      },
+      "charging_system": {
+        "name": "Charging system"
+      },
+      "steering_system": {
+        "name": "Steering system"
+      },
+      "less_one_min": {
+        "name": "Less one min"
       }
     },
     "button": {
@@ -408,6 +450,58 @@
     "device_tracker": {
       "location": {
         "name": "位置"
+      }
+    }
+  },
+  "services": {
+    "fetch_realtime": {
+      "name": "Fetch realtime data",
+      "description": "Force-fetch the latest realtime vehicle telemetry from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_gps": {
+      "name": "Fetch GPS data",
+      "description": "Force-fetch the latest GPS location from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_hvac": {
+      "name": "Fetch HVAC status",
+      "description": "Force-fetch the latest HVAC / climate status from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_charging": {
+      "name": "Fetch charging status",
+      "description": "Force-fetch the latest charging status from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_energy": {
+      "name": "Fetch energy consumption",
+      "description": "Force-fetch the latest energy consumption data from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
       }
     }
   }

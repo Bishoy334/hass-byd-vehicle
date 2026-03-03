@@ -8,9 +8,10 @@ from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from pybyd.models.vehicle import Vehicle
 
 from .const import DOMAIN
-from .coordinator import BydApi, BydDataUpdateCoordinator
+from .coordinator import BydDataUpdateCoordinator
 from .entity import BydVehicleEntity
 
 
@@ -22,21 +23,22 @@ async def async_setup_entry(
     """Set up BYD lock entities from a config entry."""
     data = hass.data[DOMAIN][entry.entry_id]
     coordinators: dict[str, BydDataUpdateCoordinator] = data["coordinators"]
-    api: BydApi = data["api"]
 
     entities: list[LockEntity] = []
 
     for vin, coordinator in coordinators.items():
-        vehicle = coordinator.data.get("vehicles", {}).get(vin)
-        if vehicle is None:
-            continue
-        entities.append(BydLock(coordinator, api, vin, vehicle))
+        entities.append(BydLock(coordinator, vin, coordinator.vehicle))
 
     async_add_entities(entities)
 
 
 class BydLock(BydVehicleEntity, LockEntity):
-    """Representation of BYD lock control."""
+    """Representation of BYD lock control.
+
+    Reads lock state from ``VehicleSnapshot.realtime.is_locked``.
+    Commands go through ``car.lock.lock()`` / ``car.lock.unlock()``
+    which handle projections and guard windows internally.
+    """
 
     _attr_has_entity_name = True
     _attr_translation_key = "lock"
@@ -44,91 +46,44 @@ class BydLock(BydVehicleEntity, LockEntity):
     def __init__(
         self,
         coordinator: BydDataUpdateCoordinator,
-        api: BydApi,
         vin: str,
-        vehicle: Any,
+        vehicle: Vehicle,
     ) -> None:
         super().__init__(coordinator)
-        self._api = api
         self._vin = vin
         self._vehicle = vehicle
         self._attr_unique_id = f"{vin}_lock"
-        self._last_command: str | None = None
-        self._last_locked: bool | None = None
 
     @property
     def is_locked(self) -> bool | None:
         """Return True if all doors are locked."""
-        if self._command_pending:
-            return self._last_locked
         realtime = self._get_realtime()
         if realtime is not None:
-            current: bool | None = realtime.is_locked
-            if current is not None:
-                return current
-        return self._last_locked
+            return realtime.is_locked
+        return None
 
     @property
     def assumed_state(self) -> bool:
-        """Return True when lock state is assumed."""
-        if self._command_pending:
-            return True
+        """Return True when lock state is assumed (no realtime data)."""
         realtime = self._get_realtime()
         return realtime is None or realtime.is_locked is None
 
-    def _is_command_confirmed(self) -> bool:
-        """Return True when realtime lock data matches the commanded state."""
-        if self._last_locked is None:
-            return True
-        realtime = self._get_realtime()
-        if realtime is None:
-            return False
-        current = realtime.is_locked
-        return current is not None and current == self._last_locked
-
-    def _handle_coordinator_update(self) -> None:
-        """Track real API lock state, then apply standard optimistic update logic."""
-        if not self._command_pending:
-            realtime = self._get_realtime()
-            if realtime is not None:
-                current = realtime.is_locked
-                if current is not None:
-                    self._last_locked = current
-        super()._handle_coordinator_update()
-
     async def async_lock(self, **_: Any) -> None:
         """Lock the vehicle."""
-
-        async def _call(client: Any) -> Any:
-            return await client.lock(self._vin)
-
-        self._last_command = "lock"
-        self._last_locked = True
-        await self._execute_command(
-            self._api,
-            _call,
+        car = self.coordinator.car
+        if car is None:
+            return
+        await self._execute_car_command(
+            car.lock.lock(),
             command="lock",
-            on_rollback=lambda: setattr(self, "_last_locked", None),
         )
 
     async def async_unlock(self, **_: Any) -> None:
         """Unlock the vehicle."""
-
-        async def _call(client: Any) -> Any:
-            return await client.unlock(self._vin)
-
-        self._last_command = "unlock"
-        self._last_locked = False
-        await self._execute_command(
-            self._api,
-            _call,
+        car = self.coordinator.car
+        if car is None:
+            return
+        await self._execute_car_command(
+            car.lock.unlock(),
             command="unlock",
-            on_rollback=lambda: setattr(self, "_last_locked", None),
         )
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        attrs = {**super().extra_state_attributes}
-        if self._last_command:
-            attrs["last_remote_command"] = self._last_command
-        return attrs
