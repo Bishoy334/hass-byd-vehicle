@@ -49,4 +49,4 @@ body:
       description: |
         Optional logs, screenshots, or references.
         If this request relates to missing/unknown BYD fields, include redacted output from the raw fetch services documented here:
-        https://github.com/jkaberg/hass-byd-vehicle?tab=readme-ov-file#raw-api-fetch-services
+        https://github.com/jkaberg/hass-byd-vehicle/blob/main/docs/TROUBLESHOOTING.md#raw-api-fetch-services

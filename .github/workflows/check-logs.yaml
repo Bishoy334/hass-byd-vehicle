@@ -94,7 +94,7 @@ jobs:
                   'This issue was automatically closed because no valid debug logs were detected in the **Relevant log output** section.',
                   '',
                   'To help us investigate, please:',
-                  '1. Enable debug logging by following [these instructions](https://github.com/jkaberg/hass-byd-vehicle?tab=readme-ov-file#debug-logging-home-assistant--pybyd)',
+                  '1. Enable debug logging by following [these instructions](https://github.com/jkaberg/hass-byd-vehicle/blob/main/docs/TROUBLESHOOTING.md#enable-debug-logging)',
                   '2. Reproduce the issue',
                   '3. Edit this issue and paste the relevant debug logs',
                   '',

@@ -62,8 +62,8 @@ body:
       label: Relevant log output
       description: |
         Please paste relevant **debug** logs. Redact VIN, tokens, email, and account identifiers.
-        To enable debug logging, see [Debug logging instructions](https://github.com/jkaberg/hass-byd-vehicle?tab=readme-ov-file#debug-logging-home-assistant--pybyd).
-        For data/parsing issues, also run the raw fetch service calls and include the matching log lines (redacted): [Raw API fetch services](https://github.com/jkaberg/hass-byd-vehicle?tab=readme-ov-file#raw-api-fetch-services).
+        To enable debug logging, see [Debug logging instructions](https://github.com/jkaberg/hass-byd-vehicle/blob/main/docs/TROUBLESHOOTING.md#enable-debug-logging).
+        For data/parsing issues, also run the raw fetch service calls and include the matching log lines (redacted): [Raw API fetch services](https://github.com/jkaberg/hass-byd-vehicle/blob/main/docs/TROUBLESHOOTING.md#raw-api-fetch-services).
 
         ⚠️ Issues without valid debug logs will be automatically closed.
       placeholder: |
