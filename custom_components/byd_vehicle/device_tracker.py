@@ -78,7 +78,10 @@ class BydDeviceTracker(CoordinatorEntity[BydGpsUpdateCoordinator], TrackerEntity
 
     def _get_gps(self) -> GpsInfo | None:
         snap = self.coordinator.data
-        return snap.gps if snap is not None else None
+        gps = snap.gps if snap is not None else None
+        if gps is not None and (gps.latitude is None or gps.longitude is None):
+            return None
+        return gps
 
     @property
     def available(self) -> bool:
