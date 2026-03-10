@@ -5,12 +5,6 @@ Home Assistant custom integration for BYD vehicles, powered by [pyBYD](https://g
 > [!NOTE]
 > The integration and pyBYD are nearing feature complete. A small number of API values still need final mapping/validation. Follow ongoing mapping work in pyBYD issue #20: https://github.com/jkaberg/pyBYD/issues/20
 
-## Prerequisites
-
-- Home Assistant with access to `custom_components`
-- A BYD account dedicated for integration use (recommended)
-- Control PIN configured in the BYD app if you want remote commands
-
 ## Installation
 
 ### Option 1: HACS (Custom Repository)
@@ -34,6 +28,12 @@ Home Assistant custom integration for BYD vehicles, powered by [pyBYD](https://g
 
 Configuration is UI-only via Home Assistant config flow.
 
+> [!TIP]
+> Use an dedicated BYD account for the integration, that way you won't be logged out from the BYD app on your main account - see [here](https://www.youtube.com/watch?v=DRzsjYHjlqQ) for instructions.
+
+> [!IMPORTANT]
+> If you intend to control the car via the integration (turn on/off A/C, lock the car etc.), it's crucial that you set up an operation/control PIN in the BYD app prior to setting up this integration.
+
 | Field | Required | Default | Description |
 |---|---|---|---|
 | Username | Yes | — | BYD account username (email/phone). |
@@ -43,19 +43,14 @@ Configuration is UI-only via Home Assistant config flow.
 | Climate duration | No | 10 | Climate run time in minutes. |
 | Debug dump API responses | No | Off | Writes API request/response traces for troubleshooting. |
 
-Tip: If you get invalid authentication, verify credentials first, then verify selected country.
+> [!TIP]
+> If you get invalid authentication, verify credentials first, then verify selected country.
 
 ## After setup
 
-Entity updates are cloud-polled. Poll intervals are exposed as entities and can be tuned in automations.
+Entity updates are cloud-polled, poll intervals are exposed as entities and can be tuned using automations.
 
 ## Documentation
 
 - Troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 - Contributing: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
-
-## Support and contributions
-
-- API mapping collaboration: https://github.com/jkaberg/pyBYD/issues/20
-- Bug/feature templates: [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE)
-- Support discussions: https://github.com/jkaberg/hass-byd-vehicle/discussions
