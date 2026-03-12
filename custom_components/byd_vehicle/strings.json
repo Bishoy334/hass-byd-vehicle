@@ -1,8 +1,8 @@
 {
   "services": {
     "fetch_realtime": {
-      "name": "Fetch realtime data",
-      "description": "Force-fetch the latest realtime vehicle telemetry from the BYD cloud.",
+      "name": "Fetch telemetry data",
+      "description": "Force-fetch the latest vehicle telemetry from the BYD cloud.",
       "fields": {
         "device_id": {
           "name": "Device",
@@ -94,7 +94,7 @@
   "entity": {
     "number": {
       "realtime_poll_interval": {
-        "name": "Realtime poll interval"
+        "name": "Telemetry poll interval"
       },
       "gps_poll_interval": {
         "name": "GPS poll interval"

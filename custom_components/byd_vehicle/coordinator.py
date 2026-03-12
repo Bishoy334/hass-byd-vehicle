@@ -10,8 +10,9 @@ from time import perf_counter
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
@@ -418,7 +419,13 @@ class BydDataUpdateCoordinator(DataUpdateCoordinator[VehicleSnapshot]):
     Receives state-change callbacks from the state engine, which
     trigger ``async_set_updated_data(car.state)``.
     Retains ``_should_fetch_hvac()`` as consumer-side optimisation.
+
+    When realtime transitions from ON -> OFF, performs a final HVAC
+    reconcile immediately and schedules one delayed retry to avoid stale
+    HVAC/seat states when the vehicle powers down.
     """
+
+    _HVAC_FINAL_RECONCILE_RETRY_DELAY_SECONDS = 60
 
     def __init__(
         self,
@@ -442,6 +449,7 @@ class BydDataUpdateCoordinator(DataUpdateCoordinator[VehicleSnapshot]):
         self._force_next_refresh = False
         self._car: BydCar | None = None
         self._realtime_endpoint_unsupported: bool = False
+        self._cancel_hvac_final_retry: CALLBACK_TYPE | None = None
 
     # ------------------------------------------------------------------
     # State-engine push
@@ -450,9 +458,12 @@ class BydDataUpdateCoordinator(DataUpdateCoordinator[VehicleSnapshot]):
     @callback
     def _async_handle_state_push(self, snapshot: VehicleSnapshot) -> None:
         """Update from a state-engine push and reset next poll from this update."""
+        previous_snapshot = self.data
+        self._schedule_hvac_final_reconcile_if_needed(previous_snapshot, snapshot)
+
         previous_timestamp = None
-        if self.data is not None and self.data.realtime is not None:
-            previous_timestamp = getattr(self.data.realtime, "timestamp", None)
+        if previous_snapshot is not None and previous_snapshot.realtime is not None:
+            previous_timestamp = getattr(previous_snapshot.realtime, "timestamp", None)
 
         current_timestamp = None
         if snapshot.realtime is not None:
@@ -465,6 +476,85 @@ class BydDataUpdateCoordinator(DataUpdateCoordinator[VehicleSnapshot]):
         self.data = snapshot
         self.last_update_success = True
         self.async_update_listeners()
+
+    @callback
+    def _cancel_pending_hvac_final_retry(self) -> None:
+        """Cancel any scheduled delayed HVAC final-reconcile retry."""
+        if self._cancel_hvac_final_retry is not None:
+            self._cancel_hvac_final_retry()
+            self._cancel_hvac_final_retry = None
+
+    @callback
+    def _schedule_hvac_final_reconcile_if_needed(
+        self,
+        previous_snapshot: VehicleSnapshot | None,
+        current_snapshot: VehicleSnapshot | None,
+    ) -> None:
+        """Schedule immediate + delayed HVAC reconcile on ON->OFF transition."""
+        was_on = self._is_vehicle_on_from_snapshot(previous_snapshot) is True
+        is_on = self._is_vehicle_on_from_snapshot(current_snapshot) is True
+
+        if not was_on:
+            return
+
+        if is_on:
+            self._cancel_pending_hvac_final_retry()
+            return
+
+        _LOGGER.debug(
+            "Vehicle transitioned OFF, scheduling final HVAC reconcile: vin=%s",
+            self._vin[-6:],
+        )
+
+        self._cancel_pending_hvac_final_retry()
+        self.hass.async_create_task(self._async_run_hvac_final_reconcile(attempt=1))
+
+        @callback
+        def _retry(_now: Any) -> None:
+            self._cancel_hvac_final_retry = None
+            self.hass.async_create_task(self._async_run_hvac_final_reconcile(attempt=2))
+
+        self._cancel_hvac_final_retry = async_call_later(
+            self.hass,
+            self._HVAC_FINAL_RECONCILE_RETRY_DELAY_SECONDS,
+            _retry,
+        )
+
+    async def _async_run_hvac_final_reconcile(self, *, attempt: int) -> None:
+        """Run one HVAC reconcile attempt after an ON->OFF transition."""
+        if not self._polling_enabled:
+            _LOGGER.debug(
+                "Skipping final HVAC reconcile (polling disabled): vin=%s, attempt=%s",
+                self._vin[-6:],
+                attempt,
+            )
+            return
+
+        car = self._car
+        if car is None:
+            return
+
+        _LOGGER.debug(
+            "Running final HVAC reconcile: vin=%s, attempt=%s",
+            self._vin[-6:],
+            attempt,
+        )
+
+        try:
+            await car.update_hvac()
+        except _AUTH_ERRORS:
+            raise
+        except _RECOVERABLE_ERRORS as exc:
+            _LOGGER.debug(
+                "Final HVAC reconcile failed: vin=%s, attempt=%s, error=%s",
+                self._vin,
+                attempt,
+                exc,
+            )
+
+        snapshot = car.state
+        if snapshot.hvac is not None:
+            self.async_set_updated_data(snapshot)
 
     @property
     def car(self) -> BydCar | None:
@@ -534,6 +624,7 @@ class BydDataUpdateCoordinator(DataUpdateCoordinator[VehicleSnapshot]):
         _LOGGER.debug("Telemetry refresh started: vin=%s", self._vin[-6:])
         force = self._force_next_refresh
         self._force_next_refresh = False
+        previous_snapshot = self.data
 
         if not self._polling_enabled and not force:
             if self.data is not None:
@@ -584,6 +675,7 @@ class BydDataUpdateCoordinator(DataUpdateCoordinator[VehicleSnapshot]):
             )
 
         snapshot = car.state
+        self._schedule_hvac_final_reconcile_if_needed(previous_snapshot, snapshot)
 
         # Bail if we still have no realtime data at all
         if snapshot.realtime is None and not self._realtime_endpoint_unsupported:
@@ -632,6 +724,8 @@ class BydDataUpdateCoordinator(DataUpdateCoordinator[VehicleSnapshot]):
 
     def set_polling_enabled(self, enabled: bool) -> None:
         self._polling_enabled = bool(enabled)
+        if not self._polling_enabled:
+            self._cancel_pending_hvac_final_retry()
         self.update_interval = self._fixed_interval if self._polling_enabled else None
 
     async def async_force_refresh(self) -> None:

@@ -32,7 +32,7 @@ Configuration is UI-only via Home Assistant config flow.
 > Use an dedicated BYD account for the integration, that way you won't be logged out from the BYD app on your main account - see [here](https://www.youtube.com/watch?v=DRzsjYHjlqQ) for instructions.
 
 > [!IMPORTANT]
-> If you intend to control the car via the integration (turn on/off A/C, lock the car etc.), it's crucial that you set up an operation/control PIN in the BYD app prior to setting up this integration.
+> If you intend to control the car via the integration (turn on/off A/C, lock the car etc.), it's crucial that you set up an operation/control PIN in the BYD app prior to setting up this integration. This also applies if you use an dedicated account for the integration, which means the dedicated account must also set an control PIN.
 
 | Field | Required | Default | Description |
 |---|---|---|---|

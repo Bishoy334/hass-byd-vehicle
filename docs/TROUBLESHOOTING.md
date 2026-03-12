@@ -32,7 +32,7 @@ Enable **Debug dump API responses** in the integration options to store BYD API 
 ## Raw API fetch services
 Use these actions to fetch raw endpoint payloads for troubleshooting and API mapping:
 
-- `byd_vehicle.fetch_realtime`
+- `byd_vehicle.fetch_realtime` (telemetry)
 - `byd_vehicle.fetch_gps`
 - `byd_vehicle.fetch_hvac`
 - `byd_vehicle.fetch_charging`
