@@ -2,6 +2,8 @@
 
 Home Assistant custom integration for BYD vehicles, powered by [pyBYD](https://github.com/jkaberg/pyBYD).
 
+[![Matrix](https://img.shields.io/matrix/hass-byd-vehicle%3Akaberg.me?server_fqdn=matrix.kaberg.me&fetchMode=summary)](https://matrix.to/#/#hass-byd-vehicle:kaberg.me)
+
 > [!NOTE]
 > The integration and pyBYD are nearing feature complete. A small number of API values still need final mapping/validation. Follow ongoing mapping work in pyBYD issue #20: https://github.com/jkaberg/pyBYD/issues/20
 
